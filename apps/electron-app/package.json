@@ -1,0 +1,19 @@
+{
+  "name": "glia-electron-app",
+  "version": "1.0.0",
+  "description": "GLIA Project - Main Electron Controller Application",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "npm run build && electron .",
+    "watch": "tsc -w"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "electron": "^28.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "electron-store": "^8.1.0"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "glia-browser-agent",
+  "version": "0.1.0",
+  "description": "GLIA Project - Browser Automation Agent",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test:safe": "npm run build && node test-safe.js",
+    "test:deepseek": "npm run build && node test-deepseek.js",
+    "install-browsers": "npx playwright install chromium"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "playwright": "^1.40.0"
+  },
+  "keywords": ["automation", "browser", "playwright"],
+  "author": "",
+  "license": "ISC"
+}

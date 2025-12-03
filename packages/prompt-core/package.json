@@ -1,0 +1,19 @@
+{
+  "name": "glia-prompt-core",
+  "version": "0.1.0",
+  "description": "GLIA Project - Core Prompt Synthesis Engine",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test:basic": "npm run build && node test-basic.js"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "keywords": ["prompt", "ai", "llm", "synthesis"],
+  "author": "",
+  "license": "ISC"
+}
