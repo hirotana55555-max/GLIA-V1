@@ -11,6 +11,6 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*"],  // この行が src/ 内の全ファイルを対象にします
   "exclude": ["node_modules", "dist"]
 }

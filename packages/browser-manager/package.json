@@ -1,0 +1,33 @@
+{
+  "name": "@glia/browser-manager",
+  "version": "0.2.0",
+  "description": "GLIA Project - Robust Browser Resource Manager (Audit-Enhanced)",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test:lifecycle": "npm run build && node test/lifecycle-test.js",
+    "test:stress": "npm run build && node test/stress-test.js",
+    "test:cleanup": "npm run build && node test/cleanup-test.js"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/uuid": "^9.0.8",
+    "typescript": "^5.0.0",
+    "uuid": "^9.0.1"
+  },
+  "peerDependencies": {
+    "playwright": "^1.40.0"
+  },
+  "keywords": [
+    "browser",
+    "resource",
+    "manager",
+    "playwright",
+    "automation",
+    "robust"
+  ],
+  "author": "",
+  "license": "ISC"
+}

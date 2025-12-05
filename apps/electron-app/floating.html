@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GLIA - フローティング入力</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            height: 100vh;
+            padding: 15px;
+            overflow: hidden;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        h2 {
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .icon-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s;
+        }
+        
+        .icon-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .input-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        textarea {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            color: white;
+            font-size: 14px;
+            resize: none;
+            font-family: inherit;
+        }
+        
+        textarea::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+        }
+        
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: #4f46e5;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #4338ca;
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .status-bar {
+            margin-top: 10px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            text-align: center;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 5px;
+            background: #10b981;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>🪟 GLIA 入力</h2>
+            <div class="controls">
+                <button class="icon-btn" title="最小化" onclick="minimizeWindow()">─</button>
+                <button class="icon-btn" title="閉じる" onclick="closeWindow()">×</button>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="input-section">
+                <textarea 
+                    id="promptInput" 
+                    placeholder="ここにLLMへのプロンプトを入力...&#10;例: 命名規則に従って新しいファイルを作成してください"
+                    rows="4"
+                ></textarea>
+            </div>
+            
+            <div class="actions">
+                <button class="btn btn-secondary" onclick="synthesizePrompt()">
+                    <span>🔄</span> 合成
+                </button>
+                <button class="btn btn-primary" onclick="sendToLLM()">
+                    <span>🚀</span> DeepSeekに送信
+                </button>
+            </div>
+            
+            <div class="status-bar">
+                <span class="status-indicator"></span>
+                <span id="statusText">準備完了</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateStatus(text, isError = false) {
+            const statusEl = document.getElementById('statusText');
+            const indicator = document.querySelector('.status-indicator');
+            
+            statusEl.textContent = text;
+            indicator.style.background = isError ? '#ef4444' : '#10b981';
+        }
+
+        function minimizeWindow() {
+            window.electronAPI?.minimizeWindow?.();
+        }
+
+        function closeWindow() {
+            window.electronAPI?.closeWindow?.();
+        }
+
+        async function synthesizePrompt() {
+            const input = document.getElementById('promptInput').value;
+            if (!input.trim()) {
+                updateStatus('プロンプトを入力してください', true);
+                return;
+            }
+            
+            updateStatus('プロンプトを合成中...');
+            // 後でprompt-coreと連携
+            setTimeout(() => {
+                updateStatus('合成完了（モジュール連携待ち）');
+            }, 500);
+        }
+
+        async function sendToLLM() {
+            const input = document.getElementById('promptInput').value;
+            if (!input.trim()) {
+                updateStatus('送信するプロンプトがありません', true);
+                return;
+            }
+            
+            updateStatus('DeepSeekに送信中...');
+            
+            try {
+                // 後でbrowser-agentと連携
+                const result = await window.electronAPI?.sendToLLM?.({
+                    service: 'deepseek',
+                    prompt: input
+                });
+                
+                if (result?.success) {
+                    updateStatus('送信成功！');
+                } else {
+                    updateStatus('送信に失敗しました', true);
+                }
+            } catch (error) {
+                updateStatus('エラーが発生しました', true);
+                console.error(error);
+            }
+        }
+
+        // Enterキーで送信（Ctrl+Enterでも送信）
+        document.getElementById('promptInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                e.preventDefault();
+                sendToLLM();
+            }
+        });
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('promptInput').focus();
+        });
+    </script>
+</body>
+</html>

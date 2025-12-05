@@ -1,0 +1,652 @@
+/**
+ * packages/browser-manager/src/BrowserManager.ts
+ * 監査対応版 - 階層構造管理と確実なリソース管理
+ */
+
+import { Browser, BrowserContext, Page, chromium, firefox, webkit } from 'playwright';
+import { v4 as uuidv4 } from 'uuid';
+import { ProcessManager } from './ProcessManager';
+import {
+  BrowserRecord,
+  ContextRecord,
+  PageRecord,
+  RecyclingPolicy,
+  DEFAULT_RECYCLING_POLICY,
+  AcquireContextOptions,
+  CleanupOptions,
+  ResourcePoolStats,
+  DEFAULT_CLEANUP_OPTIONS,
+} from './types';
+
+export class BrowserManager {
+  private static instance: BrowserManager | null = null;
+  private processManager: ProcessManager;
+  private recyclingPolicy: RecyclingPolicy;
+  
+  private browsers: Map<string, BrowserRecord> = new Map();
+  private contexts: Map<string, ContextRecord> = new Map();
+  private pages: Map<string, PageRecord> = new Map();
+  
+  private browserToId: Map<Browser, string> = new Map();
+  private contextToId: Map<BrowserContext, string> = new Map();
+  private pageToId: Map<Page, string> = new Map();
+  
+  private isShuttingDown: boolean = false;
+  private healthCheckInterval: NodeJS.Timeout | null = null;
+  private cleanupInterval: NodeJS.Timeout | null = null;
+  
+  constructor(policy: RecyclingPolicy = DEFAULT_RECYCLING_POLICY) {
+    this.processManager = new ProcessManager();
+    this.recyclingPolicy = policy;
+    
+    this.startHealthChecks();
+    this.startPeriodicCleanup();
+    
+    console.log('[BrowserManager] 初期化完了');
+  }
+
+  static getInstance(policy?: RecyclingPolicy): BrowserManager {
+    if (!BrowserManager.instance) {
+      BrowserManager.instance = new BrowserManager(policy);
+    }
+    return BrowserManager.instance;
+  }
+
+  private startHealthChecks(): void {
+    this.healthCheckInterval = setInterval(() => {
+      this.performHealthCheck().catch(error => {
+        console.error('[BrowserManager] ヘルスチェックエラー:', error);
+      });
+    }, this.recyclingPolicy.healthCheckIntervalMs);
+  }
+
+  private startPeriodicCleanup(): void {
+    this.cleanupInterval = setInterval(() => {
+      this.cleanupIdleResources().catch(error => {
+        console.error('[BrowserManager] 定期的クリーンアップエラー:', error);
+      });
+    }, 60 * 1000);
+  }
+
+  private async performHealthCheck(): Promise<void> {
+    const browserKeywords = ['chromium', 'chrome', 'firefox', 'webkit', 'playwright'];
+    const zombiePids = await this.processManager.findZombieProcesses(browserKeywords);
+    
+    if (zombiePids.length > 0) {
+      console.warn(`[BrowserManager] ゾンビプロセス検出: ${zombiePids.join(', ')}`);
+    }
+    
+    for (const [browserId, browserRecord] of this.browsers) {
+      try {
+        if (!browserRecord.browser.isConnected()) {
+          browserRecord.isHealthy = false;
+          console.warn(`[BrowserManager] ブラウザ切断: ${browserId}`);
+          continue;
+        }
+        
+        if (browserRecord.processInfo.pid) {
+          const isAlive = await this.processManager.isProcessAlive(browserRecord.processInfo.pid);
+          if (!isAlive) {
+            browserRecord.isHealthy = false;
+            console.warn(`[BrowserManager] ブラウザプロセス死亡: ${browserId}`);
+          }
+        }
+      } catch (error) {
+        browserRecord.isHealthy = false;
+        console.error(`[BrowserManager] ブラウザチェックエラー: ${browserId}`, error);
+      }
+    }
+  }
+
+  private async cleanupIdleResources(): Promise<void> {
+    const now = Date.now();
+    
+    for (const [contextId, contextRecord] of this.contexts) {
+      if (contextRecord.isDisposed) continue;
+      
+      const idleTime = now - contextRecord.lastUsedAt;
+      const age = now - contextRecord.createdAt;
+      
+      if (idleTime > this.recyclingPolicy.maxIdleTimeMs || 
+          contextRecord.requestCount >= this.recyclingPolicy.maxRequestsPerContext ||
+          age > this.recyclingPolicy.maxBrowserAgeMs) {
+        
+        console.log(`[BrowserManager] コンテキストを閉じます: ${contextId}, アイドル時間=${Math.round(idleTime/1000)}秒`);
+        await this.closeContext(contextId);
+      }
+    }
+    
+    for (const [browserId, browserRecord] of this.browsers) {
+      const age = now - browserRecord.createdAt;
+      if (age > this.recyclingPolicy.maxBrowserAgeMs && browserRecord.contexts.size === 0) {
+        console.log(`[BrowserManager] 古いブラウザを閉じます: ${browserId}, 経過時間=${Math.round(age/1000)}秒`);
+        await this.closeBrowser(browserId);
+      }
+    }
+  }
+
+  private async closeContext(contextId: string): Promise<void> {
+    const contextRecord = this.contexts.get(contextId);
+    if (!contextRecord) return;
+    
+    try {
+      for (const pageId of contextRecord.pages.keys()) {
+        await this.closePage(pageId);
+      }
+      
+      await contextRecord.context.close();
+      
+      const browserRecord = this.browsers.get(contextRecord.browserId);
+      if (browserRecord) {
+        browserRecord.contexts.delete(contextId);
+      }
+      
+      this.contexts.delete(contextId);
+      this.contextToId.delete(contextRecord.context);
+      contextRecord.isDisposed = true;
+      
+      console.log(`[BrowserManager] コンテキスト閉鎖成功: ${contextId}`);
+    } catch (error) {
+      console.error(`[BrowserManager] コンテキスト閉鎖エラー: ${contextId}`, error);
+    }
+  }
+
+  private async closePage(pageId: string): Promise<void> {
+    const pageRecord = this.pages.get(pageId);
+    if (!pageRecord) return;
+    
+    try {
+      await pageRecord.page.close();
+      
+      const contextRecord = this.contexts.get(pageRecord.contextId);
+      if (contextRecord) {
+        contextRecord.pages.delete(pageId);
+      }
+      
+      this.pages.delete(pageId);
+      this.pageToId.delete(pageRecord.page);
+      
+    } catch (error) {
+      console.error(`[BrowserManager] ページ閉鎖エラー: ${pageId}`, error);
+    }
+  }
+
+  private async closeBrowser(browserId: string): Promise<void> {
+    const browserRecord = this.browsers.get(browserId);
+    if (!browserRecord) return;
+    
+    try {
+      for (const contextId of browserRecord.contexts.keys()) {
+        await this.closeContext(contextId);
+      }
+      
+      await browserRecord.browser.close();
+      
+      if (browserRecord.processInfo.pid) {
+        this.processManager.untrackProcess(browserRecord.processInfo.pid);
+      }
+      
+      this.browsers.delete(browserId);
+      this.browserToId.delete(browserRecord.browser);
+      
+      console.log(`[BrowserManager] ブラウザ閉鎖成功: ${browserId}`);
+    } catch (error) {
+      console.error(`[BrowserManager] ブラウザ閉鎖エラー: ${browserId}`, error);
+      
+      if (browserRecord.processInfo.pid) {
+        await this.processManager.killProcess(browserRecord.processInfo.pid, true, 3000);
+      }
+    }
+  }
+
+  async createBrowser(
+    browserType: 'chromium' | 'firefox' | 'webkit' = 'chromium',
+    options: {
+      headless?: boolean;
+      args?: string[];
+    } = {}
+  ): Promise<{ browser: Browser; browserId: string }> {
+    if (this.isShuttingDown) {
+      throw new Error('BrowserManagerはシャットダウン中です');
+    }
+    
+    const browserId = `browser-${uuidv4()}`;
+    
+    console.log(`[BrowserManager] ブラウザ作成開始: ${browserId}, タイプ=${browserType}`);
+    
+    try {
+      const launchOptions: any = {
+        headless: options.headless ?? false,
+        args: options.args ?? ['--disable-dev-shm-usage', '--no-sandbox'],
+      };
+      
+      let browser: Browser;
+      switch (browserType) {
+        case 'chromium':
+          browser = await chromium.launch(launchOptions);
+          break;
+        case 'firefox':
+          browser = await firefox.launch(launchOptions);
+          break;
+        case 'webkit':
+          browser = await webkit.launch(launchOptions);
+          break;
+        default:
+          throw new Error(`未対応のブラウザタイプ: ${browserType}`);
+      }
+      
+      let pid: number | undefined;
+      try {
+        const process = (browser as any).process?.();
+        if (process && process.pid) {
+          pid = process.pid;
+        }
+      } catch (error) {
+        console.warn(`[BrowserManager] プロセス情報取得失敗:`, error);
+      }
+      
+      if (pid) {
+        this.processManager.trackProcess(pid, `${browserType}-browser`);
+      }
+      
+      const browserRecord: BrowserRecord = {
+        id: browserId,
+        browser,
+        processInfo: {
+          pid: pid || 0,
+          launchedAt: Date.now(),
+          browserType,
+          command: `${browserType}-browser`,
+        },
+        contexts: new Map(),
+        createdAt: Date.now(),
+        lastUsedAt: Date.now(),
+        requestCount: 0,
+        isHealthy: true,
+      };
+      
+      this.browsers.set(browserId, browserRecord);
+      this.browserToId.set(browser, browserId);
+      
+      browser.on('disconnected', () => {
+        console.log(`[BrowserManager] ブラウザ切断検知: ${browserId}`);
+        this.handleBrowserDisconnect(browserId);
+      });
+      
+      console.log(`[BrowserManager] ブラウザ作成成功: ${browserId}`);
+      return { browser, browserId };
+      
+    } catch (error) {
+      console.error(`[BrowserManager] ブラウザ作成失敗: ${browserId}`, error);
+      throw error;
+    }
+  }
+
+  async createContext(
+    browserId: string,
+    options: {
+      viewport?: { width: number; height: number };
+      userAgent?: string;
+    } = {}
+  ): Promise<{ context: BrowserContext; contextId: string }> {
+    const browserRecord = this.browsers.get(browserId);
+    if (!browserRecord) {
+      throw new Error(`ブラウザが見つかりません: ${browserId}`);
+    }
+    
+    if (browserRecord.contexts.size >= this.recyclingPolicy.maxContextsPerBrowser) {
+      throw new Error(`コンテキスト数が上限に達しました: ${browserId}`);
+    }
+    
+    const contextId = `context-${uuidv4()}`;
+    
+    try {
+      const contextOptions: any = {};
+      if (options.viewport) {
+        contextOptions.viewport = options.viewport;
+      }
+      if (options.userAgent) {
+        contextOptions.userAgent = options.userAgent;
+      }
+      
+      const context = await browserRecord.browser.newContext(contextOptions);
+      
+      const contextRecord: ContextRecord = {
+        id: contextId,
+        context,
+        browserId,
+        pages: new Map(),
+        createdAt: Date.now(),
+        lastUsedAt: Date.now(),
+        requestCount: 0,
+        isActive: true,
+        isDisposed: false,
+      };
+      
+      browserRecord.contexts.set(contextId, contextRecord);
+      this.contexts.set(contextId, contextRecord);
+      this.contextToId.set(context, contextId);
+      
+      context.on('close', () => {
+        this.handleContextClose(contextId);
+      });
+      
+      browserRecord.lastUsedAt = Date.now();
+      browserRecord.requestCount++;
+      
+      console.log(`[BrowserManager] コンテキスト作成成功: ${contextId}`);
+      return { context, contextId };
+      
+    } catch (error) {
+      console.error(`[BrowserManager] コンテキスト作成失敗: ${contextId}`, error);
+      throw error;
+    }
+  }
+
+  async createPage(contextId: string): Promise<{ page: Page; pageId: string }> {
+    const contextRecord = this.contexts.get(contextId);
+    if (!contextRecord || contextRecord.isDisposed) {
+      throw new Error(`コンテキストが見つかりません、または破棄済み: ${contextId}`);
+    }
+    
+    const pageId = `page-${uuidv4()}`;
+    
+    try {
+      const page = await contextRecord.context.newPage();
+      
+      const pageRecord: PageRecord = {
+        id: pageId,
+        page,
+        contextId,
+        browserId: contextRecord.browserId,
+        createdAt: Date.now(),
+        lastUsedAt: Date.now(),
+      };
+      
+      contextRecord.pages.set(pageId, pageRecord);
+      this.pages.set(pageId, pageRecord);
+      this.pageToId.set(page, pageId);
+      
+      page.on('close', () => {
+        this.handlePageClose(pageId);
+      });
+      
+      contextRecord.lastUsedAt = Date.now();
+      contextRecord.requestCount++;
+      
+      const browserRecord = this.browsers.get(contextRecord.browserId);
+      if (browserRecord) {
+        browserRecord.lastUsedAt = Date.now();
+        browserRecord.requestCount++;
+      }
+      
+      console.log(`[BrowserManager] ページ作成成功: ${pageId}`);
+      return { page, pageId };
+      
+    } catch (error) {
+      console.error(`[BrowserManager] ページ作成失敗: ${pageId}`, error);
+      throw error;
+    }
+  }
+
+  async acquireResources(
+    options: AcquireContextOptions = {
+      requireCleanContext: true,
+      reuseExisting: false,
+      timeoutMs: 30000,
+    }
+  ): Promise<{
+    browserId: string;
+    contextId: string;
+    pageId: string;
+    browser: Browser;
+    context: BrowserContext;
+    page: Page;
+  }> {
+    // 1. 既存の健全なブラウザを探す、または新規作成
+    let browserRecord: BrowserRecord | undefined;
+    let browserId: string = ''; // 明示的に初期化
+
+    if (!options.requireCleanContext && options.reuseExisting) {
+      // 再利用可能なブラウザを検索
+      for (const [id, record] of this.browsers) {
+        if (record.isHealthy && record.contexts.size < this.recyclingPolicy.maxContextsPerBrowser) {
+          const age = Date.now() - record.createdAt;
+          if (age < this.recyclingPolicy.maxBrowserAgeMs) {
+            browserRecord = record;
+            browserId = id;
+            break;
+          }
+        }
+      }
+    }
+
+    // 2. 新規ブラウザ作成
+    if (!browserRecord) {
+      const browserType = options.browserType || 'chromium';
+      const result = await this.createBrowser(browserType);
+      browserRecord = this.browsers.get(result.browserId)!;
+      browserId = result.browserId;
+    }
+
+    // 3. コンテキスト作成（常に新規）
+    const contextResult = await this.createContext(browserId);
+    
+    // 4. ページ作成
+    const pageResult = await this.createPage(contextResult.contextId);
+    
+    return {
+      browserId,
+      contextId: contextResult.contextId,
+      pageId: pageResult.pageId,
+      browser: browserRecord.browser,
+      context: contextResult.context,
+      page: pageResult.page,
+    };
+  }
+
+  async releaseResources(pageId: string, closeContext: boolean = false): Promise<void> {
+    const pageRecord = this.pages.get(pageId);
+    if (!pageRecord) {
+      console.warn(`[BrowserManager] 解放対象のページが見つかりません: ${pageId}`);
+      return;
+    }
+    
+    try {
+      await pageRecord.page.close();
+      this.handlePageClose(pageId);
+      
+      if (closeContext) {
+        await this.closeContext(pageRecord.contextId);
+      }
+      
+      console.log(`[BrowserManager] リソース解放完了: ページ=${pageId}, コンテキスト閉鎖=${closeContext}`);
+      
+    } catch (error) {
+      console.error(`[BrowserManager] リソース解放エラー:`, error);
+      this.handlePageClose(pageId);
+      if (closeContext) {
+        await this.closeContext(pageRecord.contextId);
+      }
+    }
+  }
+
+  private handlePageClose(pageId: string): void {
+    const pageRecord = this.pages.get(pageId);
+    if (!pageRecord) return;
+    
+    const contextRecord = this.contexts.get(pageRecord.contextId);
+    if (contextRecord) {
+      contextRecord.pages.delete(pageId);
+    }
+    
+    this.pages.delete(pageId);
+    this.pageToId.delete(pageRecord.page);
+  }
+
+  private handleContextClose(contextId: string): void {
+    const contextRecord = this.contexts.get(contextId);
+    if (!contextRecord) return;
+    
+    const browserRecord = this.browsers.get(contextRecord.browserId);
+    if (browserRecord) {
+      browserRecord.contexts.delete(contextId);
+    }
+    
+    for (const pageId of contextRecord.pages.keys()) {
+      this.handlePageClose(pageId);
+    }
+    
+    contextRecord.isDisposed = true;
+    this.contexts.delete(contextId);
+    this.contextToId.delete(contextRecord.context);
+  }
+
+  private handleBrowserDisconnect(browserId: string): void {
+    const browserRecord = this.browsers.get(browserId);
+    if (!browserRecord) return;
+    
+    for (const contextId of browserRecord.contexts.keys()) {
+      this.handleContextClose(contextId);
+    }
+    
+    if (browserRecord.processInfo.pid) {
+      this.processManager.untrackProcess(browserRecord.processInfo.pid);
+    }
+    
+    this.browsers.delete(browserId);
+    this.browserToId.delete(browserRecord.browser);
+  }
+
+  getResourcePoolStats(): ResourcePoolStats {
+    const memoryStats = this.processManager.getMemoryStats();
+    
+    let activeContexts = 0;
+    
+    for (const context of this.contexts.values()) {
+      if (context.isActive && !context.isDisposed) {
+        activeContexts++;
+      }
+    }
+    
+    const totalContexts = this.contexts.size;
+    const idleContexts = totalContexts - activeContexts;
+    
+    return {
+      totalBrowsers: this.browsers.size,
+      totalContexts,
+      totalPages: this.pages.size,
+      activeContexts,
+      idleContexts,
+      totalRequests: Array.from(this.contexts.values()).reduce((sum, ctx) => sum + ctx.requestCount, 0),
+      memoryUsage: memoryStats,
+      zombieProcesses: 0,
+    };
+  }
+
+  async cleanupAll(options: CleanupOptions = DEFAULT_CLEANUP_OPTIONS): Promise<{
+    browsersClosed: number;
+    contextsClosed: number;
+    pagesClosed: number;
+    processesKilled: number;
+  }> {
+    console.log(`[BrowserManager] 全リソースクリーンアップ開始: レベル=${options.level}`);
+    
+    this.isShuttingDown = true;
+    
+    if (this.healthCheckInterval) {
+      clearInterval(this.healthCheckInterval);
+      this.healthCheckInterval = null;
+    }
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
+    
+    const results = {
+      browsersClosed: 0,
+      contextsClosed: 0,
+      pagesClosed: 0,
+      processesKilled: 0,
+    };
+    
+    try {
+      for (const pageRecord of this.pages.values()) {
+        try {
+          await pageRecord.page.close();
+          results.pagesClosed++;
+        } catch (error) {
+          console.error(`[BrowserManager] ページ閉鎖エラー: ${pageRecord.id}`, error);
+        }
+      }
+      this.pages.clear();
+      this.pageToId.clear();
+      
+      for (const contextRecord of this.contexts.values()) {
+        if (contextRecord.isDisposed) continue;
+        
+        try {
+          await contextRecord.context.close();
+          results.contextsClosed++;
+        } catch (error) {
+          console.error(`[BrowserManager] コンテキスト閉鎖エラー: ${contextRecord.id}`, error);
+        }
+      }
+      this.contexts.clear();
+      this.contextToId.clear();
+      
+      const browserClosePromises = Array.from(this.browsers.values()).map(async (browserRecord) => {
+        try {
+          await browserRecord.browser.close();
+          results.browsersClosed++;
+        } catch (error) {
+          console.error(`[BrowserManager] ブラウザ閉鎖エラー: ${browserRecord.id}`, error);
+        }
+      });
+      
+      await Promise.all(browserClosePromises);
+      this.browsers.clear();
+      this.browserToId.clear();
+      
+      if (options.forceKillProcesses) {
+        const killResult = await this.processManager.killAllTrackedProcesses({
+          force: true,
+          timeoutMs: options.timeoutMs,
+        });
+        results.processesKilled = killResult.success;
+      }
+      
+      if (options.level === 'nuclear') {
+        const zombieKeywords = ['chromium', 'chrome', 'firefox', 'webkit', 'playwright'];
+        const zombiePids = await this.processManager.findZombieProcesses(zombieKeywords);
+        
+        for (const pid of zombiePids) {
+          try {
+            await this.processManager.killProcess(pid, true, 3000);
+            results.processesKilled++;
+          } catch (error) {
+            console.warn(`[BrowserManager] ゾンビプロセス終了失敗: PID=${pid}`, error);
+          }
+        }
+      }
+      
+      this.processManager.cleanup();
+      
+      console.log(`[BrowserManager] クリーンアップ完了:`, results);
+      return results;
+      
+    } finally {
+      this.isShuttingDown = false;
+    }
+  }
+
+  async shutdown(): Promise<void> {
+    console.log('[BrowserManager] シャットダウン開始');
+    await this.cleanupAll({
+      level: 'aggressive',
+      forceKillProcesses: true,
+      timeoutMs: 10000,
+    });
+    console.log('[BrowserManager] シャットダウン完了');
+  }
+}

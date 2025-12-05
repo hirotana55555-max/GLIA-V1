@@ -1,0 +1,305 @@
+/**
+ * packages/browser-manager/src/ProcessManager.ts
+ * 監査対応版 - PID追跡と強制終了を確実に実装
+ */
+
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import * as os from 'os';
+
+const execAsync = promisify(exec);
+
+export class ProcessManager {
+  private trackedPids: Set<number> = new Set();
+  private pidToInfo: Map<number, any> = new Map();
+
+  constructor() {}
+
+  /**
+   * プロセスを追跡開始
+   */
+  trackProcess(pid: number, command: string): void {
+    this.trackedPids.add(pid);
+    this.pidToInfo.set(pid, {
+      pid,
+      command,
+      trackedAt: Date.now(),
+    });
+    console.log(`[ProcessManager] プロセス追跡開始: PID=${pid}`);
+  }
+
+  /**
+   * プロセス追跡停止
+   */
+  untrackProcess(pid: number): void {
+    this.trackedPids.delete(pid);
+    this.pidToInfo.delete(pid);
+    console.log(`[ProcessManager] プロセス追跡停止: PID=${pid}`);
+  }
+
+  /**
+   * プロセスが生きているか確認
+   */
+  async isProcessAlive(pid: number): Promise<boolean> {
+    try {
+      if (os.platform() === 'win32') {
+        const { stdout } = await execAsync(`tasklist /FI "PID eq ${pid}"`);
+        return stdout.includes(`${pid}`);
+      } else {
+        // Linux/Mac
+        await execAsync(`kill -0 ${pid}`);
+        return true;
+      }
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * プロセスツリーを取得（子プロセスも含む）
+   */
+  async getProcessTree(pid: number): Promise<number[]> {
+    const pids: number[] = [pid];
+    
+    try {
+      if (os.platform() === 'win32') {
+        // Windows: tasklistで親子関係を取得
+        const { stdout } = await execAsync(`wmic process where (ParentProcessId=${pid}) get ProcessId`);
+        const lines = stdout.split('\n');
+        for (const line of lines) {
+          const childPid = parseInt(line.trim());
+          if (!isNaN(childPid) && childPid > 0) {
+            pids.push(childPid);
+            const grandchildren = await this.getProcessTree(childPid);
+            pids.push(...grandchildren);
+          }
+        }
+      } else {
+        // Unix系: psで子プロセスを取得
+        const { stdout } = await execAsync(`pgrep -P ${pid}`);
+        const childPids = stdout.trim().split('\n').filter(Boolean).map(Number);
+        for (const childPid of childPids) {
+          pids.push(childPid);
+          const grandchildren = await this.getProcessTree(childPid);
+          pids.push(...grandchildren);
+        }
+      }
+    } catch (error) {
+      console.warn(`[ProcessManager] プロセスツリー取得エラー:`, error);
+    }
+    
+    return pids;
+  }
+
+  /**
+   * プロセスを強制終了
+   */
+  async killProcess(pid: number, force: boolean = true, timeoutMs: number = 5000): Promise<boolean> {
+    const pidsToKill = await this.getProcessTree(pid);
+    console.log(`[ProcessManager] 終了対象プロセス: ${pidsToKill.join(', ')}`);
+    
+    const results = await Promise.all(
+      pidsToKill.map(pid => this.killSingleProcess(pid, force, timeoutMs))
+    );
+    
+    return results.every(result => result);
+  }
+
+  /**
+   * 単一プロセスを終了
+   */
+  private async killSingleProcess(pid: number, force: boolean, timeoutMs: number): Promise<boolean> {
+    try {
+      if (!(await this.isProcessAlive(pid))) {
+        console.log(`[ProcessManager] プロセスは既に終了済み: PID=${pid}`);
+        return true;
+      }
+      
+      const startTime = Date.now();
+      
+      if (os.platform() === 'win32') {
+        const taskkill = force ? '/F' : '';
+        await execAsync(`taskkill ${taskkill} /PID ${pid} /T`);
+      } else {
+        const signal = force ? 'SIGKILL' : 'SIGTERM';
+        await execAsync(`kill -${signal === 'SIGKILL' ? '9' : '15'} ${pid}`);
+      }
+      
+      // 終了を確認
+      while (Date.now() - startTime < timeoutMs) {
+        if (!(await this.isProcessAlive(pid))) {
+          console.log(`[ProcessManager] プロセス終了成功: PID=${pid}`);
+          return true;
+        }
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
+      // タイムアウトした場合、さらに強制終了を試みる
+      if (force) {
+        try {
+          // Node.jsのprocess.killを使用
+          process.kill(pid, 'SIGKILL');
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          return !(await this.isProcessAlive(pid));
+        } catch (fallbackError) {
+          console.error(`[ProcessManager] フォールバック終了も失敗: PID=${pid}`);
+          return false;
+        }
+      }
+      
+      return false;
+      
+    } catch (error) {
+      console.error(`[ProcessManager] プロセス終了失敗: PID=${pid}`, error);
+      return false;
+    }
+  }
+
+  /**
+   * 追跡中の全プロセスを終了
+   */
+  async killAllTrackedProcesses(options: {
+    force: boolean;
+    timeoutMs: number;
+  }): Promise<{ success: number; failed: number }> {
+    const results = await Promise.all(
+      Array.from(this.trackedPids).map(async pid => {
+        try {
+          const success = await this.killProcess(pid, options.force, options.timeoutMs);
+          return { pid, success };
+        } catch (error) {
+          console.error(`[ProcessManager] プロセス終了エラー: PID=${pid}`, error);
+          return { pid, success: false };
+        }
+      })
+    );
+    
+    const success = results.filter(r => r.success).length;
+    const failed = results.filter(r => !r.success).length;
+    
+    // 成功したプロセスは追跡から削除
+    results.filter(r => r.success).forEach(r => this.untrackProcess(r.pid));
+    
+    return { success, failed };
+  }
+
+  /**
+   * ゾンビプロセス（追跡外の関連プロセス）を検出
+   */
+  async findZombieProcesses(keywords: string[]): Promise<number[]> {
+    const zombiePids: number[] = [];
+    
+    try {
+      if (os.platform() === 'win32') {
+        const { stdout } = await execAsync('tasklist /FO CSV /NH');
+        const lines = stdout.trim().split('\r\n');
+        
+        for (const line of lines) {
+          const match = line.match(/"([^"]+)","([^"]+)","([^"]+)"/);
+          if (match) {
+            const [, , pidStr, ,] = match;
+            const pid = parseInt(pidStr);
+            const command = line.toLowerCase();
+            
+            if (this.trackedPids.has(pid)) continue;
+            
+            const isZombie = keywords.some(keyword => 
+              command.includes(keyword.toLowerCase())
+            );
+            
+            if (isZombie) {
+              zombiePids.push(pid);
+            }
+          }
+        }
+      } else {
+        const { stdout } = await execAsync('ps aux');
+        const lines = stdout.trim().split('\n');
+        
+        for (const line of lines.slice(1)) {
+          const columns = line.trim().split(/\s+/);
+          const pid = parseInt(columns[1]);
+          const command = line.substring(line.indexOf(columns[10])).toLowerCase();
+          
+          if (this.trackedPids.has(pid)) continue;
+          
+          const isZombie = keywords.some(keyword => 
+            command.includes(keyword.toLowerCase())
+          );
+          
+          if (isZombie) {
+            zombiePids.push(pid);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[ProcessManager] ゾンビプロセス検出エラー:', error);
+    }
+    
+    return zombiePids;
+  }
+
+  /**
+   * 追跡中のプロセス情報を取得
+   */
+  getTrackedProcesses(): Map<number, any> {
+    return new Map(this.pidToInfo);
+  }
+
+  /**
+   * メモリ統計を取得
+   */
+  async getMemoryStats(): Promise<{ totalRSS: number; maxRSS: number; avgRSS: number }> {
+    let totalRSS = 0;
+    let maxRSS = 0;
+    let count = 0;
+    
+    for (const pid of this.trackedPids) {
+      try {
+        const rss = await this.getProcessRSS(pid);
+        totalRSS += rss;
+        maxRSS = Math.max(maxRSS, rss);
+        count++;
+      } catch (error) {
+        // プロセスが既に終了している可能性
+      }
+    }
+    
+    return {
+      totalRSS: count > 0 ? totalRSS / 1024 : 0, // MBに変換
+      maxRSS: maxRSS / 1024,
+      avgRSS: count > 0 ? totalRSS / count / 1024 : 0,
+    };
+  }
+
+  /**
+   * プロセスのRSSを取得
+   */
+  private async getProcessRSS(pid: number): Promise<number> {
+    try {
+      if (os.platform() === 'win32') {
+        const { stdout } = await execAsync(`wmic process where ProcessId=${pid} get WorkingSetSize`);
+        const lines = stdout.trim().split('\n');
+        if (lines.length > 1) {
+          const rss = parseInt(lines[1].trim());
+          return !isNaN(rss) ? rss : 0;
+        }
+      } else {
+        const { stdout } = await execAsync(`ps -o rss= -p ${pid}`);
+        const rss = parseInt(stdout.trim());
+        return !isNaN(rss) ? rss : 0;
+      }
+    } catch (error) {
+      return 0;
+    }
+    return 0;
+  }
+
+  /**
+   * クリーンアップ
+   */
+  cleanup(): void {
+    this.trackedPids.clear();
+    this.pidToInfo.clear();
+  }
+}
