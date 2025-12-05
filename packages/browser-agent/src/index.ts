@@ -1,19 +1,8 @@
 /**
  * packages/browser-agent/src/index.ts
  *
- * BrowserAutomationAgent をリファクタリング：
- * - 「単独で起動して操作するモード」と
- * - 「BrowserManager 経由で渡された BrowserContext を利用する管理モード」
- * を両方サポートします。
- *
- * 仕様互換性を保ちつつ、Managed モード時には BrowserManager がライフサイクルを管理する想定です。
- *
- * 使い方:
- *  - 単独起動: `const a = new BrowserAutomationAgent({ headless: true }); await a.launch();`
- *  - 管理モード: `const a = new BrowserAutomationAgent({ managedContext: context }); await a.injectPrompt({...});`
- *
- * 注意:
- *  - 管理モードの場合、close() はコンテキストを閉じない（ライフサイクルは BrowserManager に委譲）
+ * BrowserAutomationAgent - 修正版
+ * userDataDirの扱いを修正
  */
 
 import { chromium, Browser, BrowserContext, Page } from 'playwright';
@@ -22,13 +11,13 @@ export interface BrowserAgentConfig {
   headless?: boolean;
   slowMo?: number;
   userDataDir?: string;
-  managedContext?: BrowserContext; // 管理モード用。与えられると launch() はスキップ
+  managedContext?: BrowserContext;
 }
 
 export interface InjectionRequest {
   targetUrl: string;
   promptText: string;
-  elementSelector?: string; // 単一またはカンマ区切りで指定
+  elementSelector?: string;
   submitAfterInput?: boolean;
   waitForResponseMs?: number;
 }
@@ -48,31 +37,35 @@ export class BrowserAutomationAgent {
   }
 
   /**
-   * ランチ。managedContext が提供されている場合は何もしない。
+   * ランチ。userDataDirが指定されている場合はlaunchPersistentContextを使用
    */
   public async launch(): Promise<void> {
     if (this.managed && this.context) {
-      // 管理モード: 何もしない（BrowserManager がコンテキストライフサイクルを管理）
       return;
     }
 
-    const launchOptions: any = {
-      headless: this.config.headless ?? true,
-      slowMo: this.config.slowMo ?? 0,
-      args: ['--no-sandbox', '--disable-dev-shm-usage'],
-    };
-
     if (this.config.userDataDir) {
-      launchOptions.args = [...launchOptions.args, `--user-data-dir=${this.config.userDataDir}`];
-    }
+      // userDataDirが指定されている場合はlaunchPersistentContextを使用
+      this.context = await chromium.launchPersistentContext(this.config.userDataDir, {
+        headless: this.config.headless ?? true,
+        slowMo: this.config.slowMo ?? 0,
+        args: ['--no-sandbox', '--disable-dev-shm-usage'],
+      });
+      this.browser = this.context.browser()!;
+    } else {
+      const launchOptions: any = {
+        headless: this.config.headless ?? true,
+        slowMo: this.config.slowMo ?? 0,
+        args: ['--no-sandbox', '--disable-dev-shm-usage'],
+      };
 
-    this.browser = await chromium.launch(launchOptions);
-    this.context = await this.browser!.newContext(); // nullチェック済み
+      this.browser = await chromium.launch(launchOptions);
+      this.context = await this.browser.newContext();
+    }
   }
 
   /**
-   * 注入操作。context が null の場合は launch() を先に呼んでおくこと。
-   * 返り値: true=成功, false=失敗
+   * 注入操作
    */
   public async injectPrompt(request: InjectionRequest): Promise<boolean> {
     if (!this.context) {
@@ -83,7 +76,6 @@ export class BrowserAutomationAgent {
     try {
       await page.goto(request.targetUrl, { waitUntil: 'domcontentloaded' });
 
-      // 選択子リストの準備（カンマ区切りをサポート）
       const selectors = (request.elementSelector || '')
         .split(',')
         .map(s => s.trim())
@@ -94,15 +86,12 @@ export class BrowserAutomationAgent {
       let found = false;
       for (const sel of allSelectors) {
         try {
-          const el = await page.waitForSelector(sel, { timeout: 3000 });
+          const el = await page.waitForSelector(sel, { timeout: 5000 });
           if (el) {
-            // 可能なら fill()、できないなら evaluate で innerText を設定
             try {
               await el.fill(request.promptText);
             } catch (e) {
-              // fill が効かない要素（contenteditable 等）の場合
               await el.evaluate((elNode, text) => {
-                // TypeScriptのDOM型チェックを回避
                 (elNode as HTMLElement).innerText = text;
               }, request.promptText);
             }
@@ -110,16 +99,13 @@ export class BrowserAutomationAgent {
             break;
           }
         } catch (e) {
-          // 試行錯誤を続ける
           const err = e as Error;
           console.log(`[BrowserAgent] セレクタ失敗: ${sel}`, err.message);
         }
       }
 
       if (!found) {
-        // 最終フォールバック: body に注入（ほとんどの場合無意味だがログ用）
         await page.evaluate((text) => {
-          // documentはブラウザコンテキスト内で有効
           if (typeof document !== 'undefined') {
             document.body.setAttribute('data-glia-temp', String(text).slice(0, 200));
           }
@@ -127,10 +113,8 @@ export class BrowserAutomationAgent {
         return false;
       }
 
-      // 送信
       if (request.submitAfterInput) {
         try {
-          // 送信ボタンを探してクリック
           const submitSelectors = ['button[type="submit"]', '[data-testid="send-button"]', 'button:has-text("Send")', 'button:has-text("送信")'];
           let sent = false;
           for (const s of submitSelectors) {
@@ -144,11 +128,9 @@ export class BrowserAutomationAgent {
             } catch (e) {
               const err = e as Error;
               console.log('[BrowserAgent] 送信方法失敗:', err.message);
-              // continue
             }
           }
           if (!sent) {
-            // Enter キーでの送信を試す
             await page.keyboard.press('Enter');
           }
         } catch (e) {
@@ -156,7 +138,6 @@ export class BrowserAutomationAgent {
         }
       }
 
-      // 応答を待つ（簡易）
       if (request.waitForResponseMs && request.waitForResponseMs > 0) {
         await page.waitForTimeout(request.waitForResponseMs);
       } else {
@@ -169,7 +150,6 @@ export class BrowserAutomationAgent {
       console.error('[BrowserAutomationAgent] injectPrompt error:', error);
       return false;
     } finally {
-      // 管理モード以外ではページを閉じる。managedContext の場合もページは閉じるべき。
       try {
         await page.close();
       } catch (e) {
@@ -179,12 +159,10 @@ export class BrowserAutomationAgent {
   }
 
   /**
-   * Managed モードでは何もしない（BrowserManager が context をクローズする）
-   * Standalone モードでは browser を close する
+   * クローズ
    */
   public async close(): Promise<void> {
     if (this.managed) {
-      // do not close context/browser here
       this.context = null;
       return;
     }
@@ -201,7 +179,7 @@ export class BrowserAutomationAgent {
   }
 
   /**
-   * Attach to an externally provided context (BrowserManager の context を受け取る)
+   * 外部コンテキストをアタッチ
    */
   public attachToContext(context: BrowserContext) {
     this.context = context;

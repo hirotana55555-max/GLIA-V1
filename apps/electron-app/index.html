@@ -31,6 +31,28 @@
         <p>Electronメインアプリが正常に起動しました。</p>
         <p>このウィンドウが、プロンプト生成UIや設定画面の「親」となります。</p>
         <p class="status">✅ ステータス: 準備完了</p>
+        <div id="logs" style="margin-top:20px; padding:10px; background:#f8f8f8; border-radius:5px;">
+            <h3>ログ:</h3>
+            <div id="logOutput"></div>
+        </div>
     </div>
+    <script>
+        // シンプルなログ表示
+        function addLog(msg) {
+            const logOutput = document.getElementById('logOutput');
+            const p = document.createElement('p');
+            p.textContent = new Date().toLocaleTimeString() + ': ' + msg;
+            logOutput.appendChild(p);
+        }
+        
+        addLog('GLIA Controller 起動完了');
+        
+        // IPC通信テスト
+        if (window.electronAPI) {
+            addLog('electronAPI 利用可能');
+        } else {
+            addLog('electronAPI 未検出');
+        }
+    </script>
 </body>
 </html>

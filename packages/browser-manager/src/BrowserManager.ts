@@ -17,6 +17,7 @@ import {
   ResourcePoolStats,
 } from './types';
 import { ProcessManager } from './ProcessManager';
+import { MemoryProfiler } from './MemoryProfiler';
 
 export class BrowserManager {
   // singleton instance is optional; provide getInstance for convenience
@@ -37,10 +38,23 @@ export class BrowserManager {
   private policy: RecyclingPolicy;
   private periodicCleanupHandle: NodeJS.Timeout | null = null;
   private isCleaning: boolean = false;
+  private memoryProfiler: MemoryProfiler;
 
   private constructor(policyOverride?: Partial<RecyclingPolicy>) {
     this.policy = { ...DEFAULT_RECYCLING_POLICY, ...(policyOverride || {}) };
+    this.memoryProfiler = new MemoryProfiler();
     this.startPeriodicCleanup();
+    this.startMemoryMonitoring();
+  }
+
+  private startMemoryMonitoring(): void {
+    // プロセスメモリ監視を開始
+    this.memoryProfiler.startProcessMonitoring();
+    
+    // メモリアラートのリスナー
+    this.memoryProfiler.on('alert', (alert: any) => {
+      console.log(`[MemoryAlert] ${alert.severity?.toUpperCase() || 'WARNING'}: ${alert.message}`);
+    });
   }
 
   /* ------------------------------
@@ -68,23 +82,9 @@ export class BrowserManager {
           const idle = now - rec.lastUsedAt;
           const age = now - rec.createdAt;
           if (idle < this.policy.maxIdleTimeMs && age < this.policy.maxContextLifetimeMs) {
-            // Return the actual BrowserContext object referenced in rec
-            const browserRecord = this.browsers.get(rec.parentBrowserId);
-            if (browserRecord) {
-              // find actual BrowserContext object from browserRecord.contexts
-              for (const c of browserRecord.contexts) {
-                try {
-                  // Use identity to match: compare c.storageState? cannot; instead match via context === rec.context
-                  // rec.context is stored only as reference; we will return rec.context
-                } catch (e) {
-                  // ignore
-                }
-              }
-            }
             // Update counters and timestamps
             rec.lastUsedAt = Date.now();
             rec.requestCount++;
-            // The stored rec.context is the actual BrowserContext
             return rec.context;
           }
         }
@@ -105,7 +105,6 @@ export class BrowserManager {
     const rec = this.contexts.get(ctxId);
     if (!rec) return;
     rec.lastUsedAt = Date.now();
-    // do not close immediately; periodic cleaner will decide
   }
 
   /**
@@ -139,8 +138,13 @@ export class BrowserManager {
     const idleContexts = totalContexts - activeContexts;
     const totalRequests = Array.from(this.contexts.values()).reduce((s, c) => s + c.requestCount, 0);
 
-    // memory sample: gather small sample via context storage if any MemoryProfiler is integrated.
-    const memory = { sampleCount: 0, minMB: 0, maxMB: 0, avgMB: 0 };
+    const memoryStats = this.memoryProfiler.getStatistics();
+    const memory = {
+      sampleCount: memoryStats.historySize,
+      minMB: 0,
+      maxMB: 0,
+      avgMB: Math.round(memoryStats.averageRSS / (1024 * 1024))
+    };
 
     return {
       totalBrowsers,
@@ -151,6 +155,13 @@ export class BrowserManager {
       totalRequests,
       memory,
     };
+  }
+
+  /**
+   * Get memory profiler instance for advanced monitoring
+   */
+  public getMemoryProfiler(): MemoryProfiler {
+    return this.memoryProfiler;
   }
 
   /**
@@ -168,6 +179,9 @@ export class BrowserManager {
       clearInterval(this.periodicCleanupHandle);
       this.periodicCleanupHandle = null;
     }
+
+    // Stop memory monitoring
+    this.memoryProfiler.stopAll();
 
     // Close all contexts
     const contextIds = Array.from(this.contexts.keys());
