@@ -1,0 +1,466 @@
+@startuml
+title GLIA Antigravity Harness – Log Flow
+
+skinparam shadowing false
+skinparam linetype ortho
+skinparam defaultTextAlignment center
+
+package "Harness Core" {
+  class AntigravityHarness {
+    +initialize()
+    +runMission()
+    +captureLogs()
+  }
+
+  class LogBuffer {
+    +append(entry)
+    +flush()
+  }
+}
+
+package "SIE Logger" {
+  class SieUnifiedLogger {
+    +logDebug()
+    +logInfo()
+    +logWarn()
+    +logError()
+    +exportBatch()
+  }
+}
+
+package "Swarm Layer" {
+  class SwarmOrchestrator {
+    +dispatch()
+    +reportEvent()
+  }
+
+  class SwarmEvent {
+    +timestamp
+    +category
+    +payload
+  }
+}
+
+AntigravityHarness --> LogBuffer : write
+LogBuffer --> SieUnifiedLogger : flush batch
+SwarmOrchestrator --> SieUnifiedLogger : report event
+SieUnifiedLogger --> SwarmEvent : transform → event
+SwarmEvent --> AntigravityHarness : callback (optional)
+
+@enduml
+@startuml BrowserManager_Component
+title BrowserManager - Component & Types
+
+package "BrowserManager" {
+  class BrowserManager {
+    +createBrowser(config)
+    +getBrowser(id)
+    +disposeBrowser(id)
+    +runAction(action: ActionRequest)
+    +listActive()
+  }
+  class ResourcePool {
+    +acquireBrowser()
+    +releaseBrowser(browserId)
+    +stats()
+  }
+  class PIDTracker {
+    -activePIDs : Set<int>
+    +allocatePID(): int
+    +releasePID(int)
+    +list()
+  }
+}
+
+package "Browser Hierarchy" {
+  class Browser {
+    +id: string
+    +newContext()
+    +getContext(id)
+    +close()
+  }
+  class Context {
+    +id: string
+    +newPage()
+    +getPage(id)
+    +close()
+  }
+  class Page {
+    +id: string
+    +navigate(url)
+    +evaluate(js)
+    +click(selector)
+    +type(selector, text)
+    +screenshot()
+    +close()
+  }
+}
+
+BrowserManager --> ResourcePool
+BrowserManager --> PIDTracker
+BrowserManager --> Browser : manages >
+Browser --> Context : contains >
+Context --> Page : contains >
+@enduml
+@startuml BrowserManager_Dispatch
+actor "Swarm/TOON" as Client
+participant "SIE" as SIE
+participant "BrowserManager" as BM
+participant "PIDTracker" as PID
+participant "ResourcePool" as RP
+participant "Browser" as B
+participant "Context" as C
+participant "Page" as P
+
+Client -> SIE : send(TOONInstruction)
+SIE -> BM : runAction(action)
+BM -> PID : allocatePID()
+BM -> RP : acquireBrowser()
+BM -> B : selectTargetBrowser()
+B -> C : resolveContext(action.contextId)
+C -> P : resolvePage(action.pageId)
+BM -> P : execute(action.operation)
+P --> BM : operationResult
+BM -> PID : releasePID()
+BM --> SIE : ActionResult
+SIE --> Client : MissionStepResult
+@enduml
+@startuml Resource_Recycle
+title Resource Recycle Policy
+
+participant BrowserManager
+participant ResourcePool
+participant Browser
+
+BrowserManager -> ResourcePool : checkIdle(browser)
+alt idle > TTL or memory pressure
+  ResourcePool -> Browser : closeIfIdle()
+  Browser -> ResourcePool : released
+else keep alive
+  BrowserManager -> ResourcePool : keep(browser)
+end
+@enduml
+@startuml Safety_Flow
+start
+:receive ActionRequest;
+if (action.type == "filesystem_write") then (yes)
+  :check target path ∈ allowed_writable_paths?;
+  if (allowed) then (ok)
+    :permit with audit;
+  else (no)
+    :reject and warn user;
+  endif
+else
+  :allow (non-destructive) or sandbox;
+endif
+stop
+@enduml
+@startuml GLIA_Integrated_Architecture
+title GLIA Integrated Architecture - Layered View
+
+package "0. Foundation (Cross-cutting)" {
+  class Logger
+  class Config
+  class EventBus
+  class ErrorMonitor
+}
+package "1. Domain" {
+  class SessionModel
+  class BrowserModel
+  class TOONModel
+}
+package "2. Application" {
+  class Orchestrator
+  class SwarmController
+  class TaskScheduler
+  class PolicyManager
+}
+package "3. Infra" {
+  class BrowserManager
+  class ResourcePool
+  class PIDTracker
+  class APIClient
+  class AuditLogger
+}
+package "3.5 Browser-Manager" {
+  class BrowserController
+  class ContextController
+  class PageController
+  class SandboxAdapter
+}
+package "4. Presentation" {
+  class CLI
+  class ElectronUI
+  class RESTAPI
+}
+
+' Relations
+Orchestrator --> SwarmController
+SwarmController --> TaskScheduler
+SwarmController --> TOONModel
+TaskScheduler --> BrowserManager
+BrowserManager --> ResourcePool
+BrowserManager --> PIDTracker
+BrowserManager --> SandboxAdapter
+APIClient --> Orchestrator
+AuditLogger --> ErrorMonitor
+ElectronUI --> Orchestrator
+CLI --> Orchestrator
+RESTAPI --> Orchestrator
+EventBus --> Orchestrator
+Config --> PolicyManager
+
+' cross-layer links
+Logger --> Orchestrator
+Logger --> BrowserManager
+ErrorMonitor --> SandboxAdapter
+@enduml
+@startuml Integrated_Sequence
+actor "User" as U
+participant "ElectronUI" as UI
+participant "Orchestrator" as O
+participant "SwarmController" as S
+participant "SIE" as SIE
+participant "BrowserManager" as BM
+participant "AuditLogger" as AL
+
+U -> UI : create mission (natural language)
+UI -> O : send mission
+O -> S : decompose → TOON
+S -> SIE : execute(toonStep)
+SIE -> BM : runAction
+BM --> SIE : actionResult
+SIE --> S : stepResult
+S -> O : nodeReport
+O -> AL : write audit
+O --> UI : mission summary
+@enduml
+@startuml SIE_Component
+
+package "SIE (Structured Instruction Executor)" {
+    class SIE {
+        + execute(instruction: SIEInstruction)
+        - validate()
+        - parse()
+        - dispatch()
+    }
+
+    class InstructionParser {
+        + parse(raw): SIEInstruction
+    }
+
+    class InstructionValidator {
+        + validate(instruction): boolean
+    }
+
+    class SIEExecutor {
+        + run(instruction: SIEInstruction)
+        - runNavigation()
+        - runClick()
+        - runInput()
+        - runEval()
+    }
+}
+
+package "Target Layer (BrowserManager)" {
+    class BrowserManager {
+        + runAction(action)
+    }
+}
+
+SIE --> InstructionParser
+SIE --> InstructionValidator
+SIE --> SIEExecutor
+SIEExecutor --> BrowserManager
+
+@enduml
+@startuml SIE_Sequence
+
+actor "Swarm / TOON" as Swarm
+
+Swarm -> SIE : execute(rawInstruction)
+SIE -> InstructionParser : parse(raw)
+InstructionParser --> SIE : SIEInstruction
+
+SIE -> InstructionValidator : validate(instruction)
+InstructionValidator --> SIE : ok
+
+SIE -> SIEExecutor : run(instruction)
+
+SIEExecutor -> BrowserManager : runAction(ActionRequest)
+BrowserManager --> SIEExecutor : ActionResult
+
+SIEExecutor --> SIE : result
+SIE --> Swarm : FinalResult
+
+@enduml
+@startuml SIE_Validation
+
+start
+:Load JSON schema;
+:Check required fields;
+if (valid opcode?) then (yes)
+else (no)
+  :throw ValidationError;
+endif
+
+:Check argument shape;
+if (OK?) then (yes)
+else (no)
+  :throw SchemaError;
+endif
+
+stop
+
+@enduml
+@startuml SIE_Dispatch
+
+start
+:receive SIEInstruction;
+if (instruction.type == "navigation") then (yes)
+  :runNavigation;
+elseif (type == "click") then (click)
+  :runClick;
+elseif (type == "input") then (input)
+  :runInput;
+elseif (type == "eval") then (eval)
+  :runEval;
+else (unknown)
+  :throw UnsupportedOperationError;
+endif
+
+stop
+
+@enduml
+@startuml SIE_to_BrowserManager
+
+SIEExecutor -> BrowserManager : runAction(ActionRequest)
+BrowserManager -> Browser : resolve
+Browser -> Context : resolve
+Context -> Page : resolve
+
+Page -> Page : performOperation()
+Page --> BrowserManager : ActionResult
+BrowserManager --> SIEExecutor : ActionResult
+
+@enduml
+@startuml Swarm_TOON_Architecture
+
+package "Swarm" {
+    class SwarmOrchestrator {
+        + runMission(mission)
+        + dispatchToNode()
+    }
+
+    class SwarmNode {
+        + execute(task)
+        + report()
+    }
+}
+
+package "TOON (Task-Oriented Operator Notation)" {
+    class TOONParser {
+        + parse(toonText): TOONInstruction
+    }
+
+    class TOONValidator {
+        + validate(TOONInstruction)
+    }
+
+    class TOONGenerator {
+        + generateOptimizedSteps()
+    }
+
+    class TOONInstruction {
+        opcode: string
+        params: Map
+    }
+}
+
+package "Execution Layer" {
+    class SIE {
+        + execute(instruction)
+    }
+}
+
+SwarmOrchestrator --> SwarmNode
+SwarmNode --> TOONParser
+TOONParser --> TOONValidator
+TOONValidator --> TOONGenerator
+TOONGenerator --> SIE
+
+@enduml
+@startuml Swarm_TOON_Sequence
+
+actor "User / AI Agent" as User
+
+User -> SwarmOrchestrator : runMission(spec)
+
+SwarmOrchestrator -> SwarmNode : assignTask()
+SwarmNode -> TOONParser : parse(toonText)
+TOONParser --> SwarmNode : TOONInstruction
+
+SwarmNode -> TOONValidator : validate(TOONInstruction)
+TOONValidator --> SwarmNode : Valid
+
+SwarmNode -> TOONGenerator : generateOptimizedSteps()
+TOONGenerator --> SwarmNode : OptimizedTOON[]
+
+SwarmNode -> SIE : execute(step)
+SIE --> SwarmNode : StepResult
+
+SwarmNode --> SwarmOrchestrator : Report(result)
+SwarmOrchestrator --> User : Final Mission Result
+
+@enduml
+@startuml TOON_Normalization
+
+start
+:Receive TOON text;
+:Trim / Remove comments;
+:Tokenize into opcode + params;
+:Normalize parameter naming;
+
+if (well-formed?) then (yes)
+  :Construct TOONInstruction;
+else (no)
+  :Raise TOONSyntaxError;
+endif
+
+stop
+
+@enduml
+@startuml Swarm_Parallel
+
+SwarmOrchestrator -> SwarmNode1 : task A
+SwarmOrchestrator -> SwarmNode2 : task B
+SwarmOrchestrator -> SwarmNode3 : task C
+
+SwarmNode1 -> SIE : execute(A)
+SwarmNode2 -> SIE : execute(B)
+SwarmNode3 -> SIE : execute(C)
+
+SIE --> SwarmNode1 : result A
+SIE --> SwarmNode2 : result B
+SIE --> SwarmNode3 : result C
+
+SwarmNode1 --> SwarmOrchestrator : report A
+SwarmNode2 --> SwarmOrchestrator : report B
+SwarmNode3 --> SwarmOrchestrator : report C
+
+@enduml
+@startuml Swarm_Aggregation
+
+start
+
+:Initialize result set;
+
+repeat
+    :Receive report from SwarmNode;
+    :Merge result into mission state;
+repeat while (remaining tasks?)
+
+:Finalize mission;
+stop
+
+@enduml
