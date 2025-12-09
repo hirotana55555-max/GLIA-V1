@@ -3,7 +3,7 @@
 🔧 あなたがやること
 
 プロジェクトが変わったら以下を1回実行
-./SPECIFICATION/sync-project.sh
+bash ./SPECIFICATION/SCRIPTS/sync-project.sh
 
 
 すると：

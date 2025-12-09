@@ -1,0 +1,20 @@
+ブランチ master
+Your branch is up to date with 'origin/master'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   SPECIFICATION/GIT_STATUS.txt
+	modified:   SPECIFICATION/GLIA_PROJECT_TREE.md
+	modified:   package-lock.json
+	modified:   package.json
+
+追跡されていないファイル:
+  (use "git add <file>..." to include in what will be committed)
+	SPECIFICATION/SPECIFICATION/
+	SPECIFICATION/UML/
+	packages/browser-agent/tsconfig.tsbuildinfo
+	packages/browser-manager/tsconfig.tsbuildinfo
+	packages/prompt-core/tsconfig.tsbuildinfo
+
+no changes added to commit (use "git add" and/or "git commit -a")

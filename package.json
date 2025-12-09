@@ -16,7 +16,10 @@
     "install:all": "npm install && cd packages/prompt-core && npm install && cd ../browser-manager && npm install && cd ../browser-agent && npm install && cd ../../apps/electron-app && npm install"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "@types/node": "^24.10.2",
+    "ts-node": "^10.9.2",
+    "typedoc": "^0.28.15",
+    "typescript": "^5.9.3"
   },
   "engines": {
     "node": ">=18.0.0"
