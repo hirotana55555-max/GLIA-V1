@@ -1,32 +1,25 @@
+# Git Status
+Generated: 2025年 12月  9日 火曜日 22:45:01 JST
+```
 ブランチ master
-Your branch is up to date with 'origin/master'.
+このブランチは 'origin/master' よりも1コミット進んでいます。
+  (use "git push" to publish your local commits)
 
 Changes not staged for commit:
   (use "git add/rm <file>..." to update what will be committed)
   (use "git restore <file>..." to discard changes in working directory)
-	deleted:    SPECIFICATION/GIT_DIFF.txt
-	deleted:    SPECIFICATION/GIT_STATUS.txt
+	deleted:    SPECIFICATION/ChatGPT_SPECIFICATION_251207.md
+	modified:   SPECIFICATION/GIT_STATUS.md
 	modified:   SPECIFICATION/GLIA_PROJECT_TREE.md
+	modified:   SPECIFICATION/PACKAGE_LIST.md
 	modified:   SPECIFICATION/Readme
-	deleted:    SPECIFICATION/SPEC_SYNC.md
-	deleted:    SPECIFICATION/sync-project.sh
-	modified:   package-lock.json
-	modified:   package.json
+	modified:   SPECIFICATION/SCRIPTS/sync-project.sh
 
 追跡されていないファイル:
   (use "git add <file>..." to include in what will be committed)
-	SPECIFICATION/Backup/GLIA_SPEC_BACKUP_20251209_170213.tgz
-	SPECIFICATION/Backup/GLIA_SPEC_BACKUP_20251209_171435.tgz
-	SPECIFICATION/DOCS/GLIA_PROJECT_TREE.md
-	SPECIFICATION/DOCS/SPEC_SYNC.md
-	SPECIFICATION/GIT_STATUS.md
-	SPECIFICATION/META/GIT_DIFF.txt
-	SPECIFICATION/META/GIT_STATUS.txt
-	SPECIFICATION/META/PACKAGE_LIST.md
-	SPECIFICATION/SCRIPTS/gen-uml.sh
-	SPECIFICATION/SCRIPTS/sync-project.sh
-	packages/browser-agent/tsconfig.tsbuildinfo
-	packages/browser-manager/tsconfig.tsbuildinfo
-	packages/prompt-core/tsconfig.tsbuildinfo
+	SPECIFICATION/Backup/ChatGPT_SPECIFICATION_251207.md
+	SPECIFICATION/Backup/GLIA_SPEC_BACKUP_20251209_181202.tgz
+	SPECIFICATION/SCRIPTS/check-spec.sh
 
 no changes added to commit (use "git add" and/or "git commit -a")
+```

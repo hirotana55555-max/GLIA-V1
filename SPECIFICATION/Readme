@@ -1,6 +1,34 @@
+推奨運用フロー（LLM投入時）
+
+必須：最初に読ませる
+
+SPECIFICATION/DOCS/SPEC_SYNC.md
+→ プロジェクト全体の構造、Git 状況、パッケージ情報を一発で取得
+
+
+必要に応じて読ませる補助資料
+（設計の深掘りや特定モジュールの理解が必要なときだけ）
+
+GLIA_SYSTEM_ARCHITECTURE.md（全体設計）
+
+glia_browser_manager.md / glia_sie_executor.md / glia_swarm_toon.md / glia_antigravity_harness.md
+（モジュール別の詳細仕様）
+
+GLIA_ROADMAP.md / GLIA_DEVELOPMENT_PHASE.md（進捗や次タスク）
+
+
+TEMP / shared フォルダは原則無視。試験・実験用なので、LLMに読ませない
+
+
+必要なら VSCode ワークスペース情報を読ませる
+
+GLIA.code-workspace
+モジュール位置や依存関係の把握に役立つが必須ではない
+
+
 ✅【ChatGPTによる説明】
 
-🔧 あなたがやること
+🔧 人間（ひろし）がやること
 
 プロジェクトが変わったら以下を1回実行
 bash ./SPECIFICATION/SCRIPTS/sync-project.sh
@@ -134,3 +162,25 @@ SPECIFICATION/SPEC_SYNC.md
 GLIA.code-workspace
 
 と指示すれば復旧できるようになる。
+
+
+実行方法
+cd /home/els/Antigravity/GLIA-V1
+chmod +x SPECIFICATION/SCRIPTS/check-spec.sh
+bash SPECIFICATION/SCRIPTS/check-spec.sh
+
+
+これにより：
+
+出力ファイルが存在するか
+
+サイズと更新日時
+
+冒頭10行の内容
+
+をまとめて確認できます。
+
+
+各LLM向けワークスペースとして、/home/els/Antigravity/GLIA-V1/TEMP以下にファイルやフォルダを自由に生成できます。
+許可なくTEMP以外のファイルやフォルダを改変しないこと。
+TEMPフォルダ以下は人間により不定期に削除される。
