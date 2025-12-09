@@ -40,6 +40,11 @@ packages/prompt-core/test-basic.js
 SPECIFICATION/API_REFERENCE.md
 SPECIFICATION/DOCS/GLIA_PROJECT_TREE.md
 SPECIFICATION/DOCS/SPEC_SYNC.md
+SPECIFICATION/DOCS/glia_antigravity_harness.md
+SPECIFICATION/DOCS/glia_browser_manager.md
+SPECIFICATION/DOCS/glia_integrated_architecture.md
+SPECIFICATION/DOCS/glia_sie_executor.md
+SPECIFICATION/DOCS/glia_swarm_toon.md
 SPECIFICATION/GIT_STATUS.md
 SPECIFICATION/GLIA_DEVELOPMENT_PHASE.md
 SPECIFICATION/GLIA_PROJECT_OVERVIEW.md
@@ -51,6 +56,9 @@ SPECIFICATION/META/GIT_STATUS.txt
 SPECIFICATION/META/PACKAGE_LIST.md
 SPECIFICATION/PACKAGE_LIST.md
 SPECIFICATION/PROJECT_SYNC_PACKET.md
+SPECIFICATION/Review_Phase_2_5/DeepSeek_review_Phase_2_5.md
+SPECIFICATION/Review_Phase_2_5/Manus_review_Phase_2_5.md
+SPECIFICATION/Review_Phase_2_5/Phase_2_5_Specification.md
 SPECIFICATION/SCRIPTS/check-spec.sh
 SPECIFICATION/SCRIPTS/gen-uml.sh
 SPECIFICATION/SCRIPTS/sync-project.sh
@@ -81,6 +89,7 @@ SPECIFICATION/UML_FULL.md
 /SPECIFICATION/Backup
 /SPECIFICATION/DOCS
 /SPECIFICATION/META
+/SPECIFICATION/Review_Phase_2_5
 /SPECIFICATION/SCRIPTS
 /SPECIFICATION/UML
 /apps
@@ -88,42 +97,61 @@ SPECIFICATION/UML_FULL.md
 /apps/electron-app/src
 /docs
 /integration-test
-/packages
 ```
 
 ## 📌 2. Git 状況
 ```
 ブランチ master
-このブランチは 'origin/master' よりも1コミット進んでいます。
-  (use "git push" to publish your local commits)
+Your branch is up to date with 'origin/master'.
 
 Changes not staged for commit:
-  (use "git add/rm <file>..." to update what will be committed)
+  (use "git add <file>..." to update what will be committed)
   (use "git restore <file>..." to discard changes in working directory)
-	deleted:    SPECIFICATION/ChatGPT_SPECIFICATION_251207.md
+	modified:   .gitignore
+	modified:   SPECIFICATION/DOCS/SPEC_SYNC.md
 	modified:   SPECIFICATION/GIT_STATUS.md
 	modified:   SPECIFICATION/GLIA_PROJECT_TREE.md
 	modified:   SPECIFICATION/PACKAGE_LIST.md
-	modified:   SPECIFICATION/Readme
-	modified:   SPECIFICATION/SCRIPTS/sync-project.sh
 
 追跡されていないファイル:
   (use "git add <file>..." to include in what will be committed)
-	SPECIFICATION/Backup/ChatGPT_SPECIFICATION_251207.md
-	SPECIFICATION/Backup/GLIA_SPEC_BACKUP_20251209_181202.tgz
-	SPECIFICATION/SCRIPTS/check-spec.sh
+	SPECIFICATION/DOCS/glia_antigravity_harness.md
+	SPECIFICATION/DOCS/glia_browser_manager.md
+	SPECIFICATION/DOCS/glia_integrated_architecture.md
+	SPECIFICATION/DOCS/glia_sie_executor.md
+	SPECIFICATION/DOCS/glia_swarm_toon.md
+	SPECIFICATION/Review_Phase_2_5/DeepSeek_review_Phase_2_5.md
+	SPECIFICATION/Review_Phase_2_5/Manus_review_Phase_2_5.md
+	SPECIFICATION/Review_Phase_2_5/Phase_2_5_Specification.md
+	SPECIFICATION/UML/BrowserManager_Component.png
+	SPECIFICATION/UML/BrowserManager_Dispatch.png
+	SPECIFICATION/UML/GLIA_Integrated_Architecture.png
+	SPECIFICATION/UML/Integrated_Sequence.png
+	SPECIFICATION/UML/Resource_Recycle.png
+	SPECIFICATION/UML/SIE_Component.png
+	SPECIFICATION/UML/SIE_Dispatch.png
+	SPECIFICATION/UML/SIE_Sequence.png
+	SPECIFICATION/UML/SIE_Validation.png
+	SPECIFICATION/UML/SIE_to_BrowserManager.png
+	SPECIFICATION/UML/Safety_Flow.png
+	SPECIFICATION/UML/Swarm_Aggregation.png
+	SPECIFICATION/UML/Swarm_Parallel.png
+	SPECIFICATION/UML/Swarm_TOON_Architecture.png
+	SPECIFICATION/UML/Swarm_TOON_Sequence.png
+	SPECIFICATION/UML/TOON_Normalization.png
+	SPECIFICATION/UML/UML_FULL.png
+	SPECIFICATION/UML/UML_FULL.puml
 
 no changes added to commit (use "git add" and/or "git commit -a")
 ```
 
 ## 📌 3. Git 差分（変更ファイル）
 ```
-D	SPECIFICATION/ChatGPT_SPECIFICATION_251207.md
+M	.gitignore
+M	SPECIFICATION/DOCS/SPEC_SYNC.md
 M	SPECIFICATION/GIT_STATUS.md
 M	SPECIFICATION/GLIA_PROJECT_TREE.md
 M	SPECIFICATION/PACKAGE_LIST.md
-M	SPECIFICATION/Readme
-M	SPECIFICATION/SCRIPTS/sync-project.sh
 ```
 
 ## 📌 4. パッケージ情報（ルート package.json）
@@ -158,7 +186,7 @@ M	SPECIFICATION/SCRIPTS/sync-project.sh
 ```
 
 ## 📌 5. メタ情報
-- 生成日時: 2025年 12月  9日 火曜日 22:45:01 JST
+- 生成日時: 2025年 12月 10日 水曜日 01:05:28 JST
 - プロジェクトルート: /home/els/Antigravity/GLIA-V1
 - このファイルだけを読めば LLM が全体を理解可能
 
