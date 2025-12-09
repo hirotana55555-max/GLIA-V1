@@ -78,3 +78,33 @@ export const DEFAULT_RECYCLING_POLICY: RecyclingPolicy = {
   periodicCleanupIntervalMs: 60 * 1000, // 1 min
   browserKeepAliveMs: 60 * 60 * 1000, // 1 hour
 };
+
+// --- MVP / SIE Integration Types ---
+
+export interface BrowserProcess {
+  pid: string;
+  model: string;
+}
+
+export type ManagedBrowserContextState = "CREATED" | "ACTIVE" | "CLOSED";
+
+export interface ManagedBrowserContext {
+  id: string;
+  browserPid: string;
+  state: ManagedBrowserContextState;
+  createdAt: number;
+  lastActivityAt: number;
+  pages: Map<string, ManagedBrowserPage>;
+  metadata: Record<string, any>;
+}
+
+export interface ManagedBrowserPage {
+  id: string;
+  contextId: string;
+  state: string;
+  url?: string;
+  title?: string;
+  createdAt: number;
+  result?: any;
+  prompt?: string;
+}

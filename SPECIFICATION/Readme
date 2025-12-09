@@ -1,0 +1,136 @@
+✅【ChatGPTによる説明】
+
+🔧 あなたがやること
+
+プロジェクトが変わったら以下を1回実行
+./SPECIFICATION/sync-project.sh
+
+
+すると：
+
+SPEC_SYNC.md が最新に更新される
+
+それをそのまま LLM に貼るだけで OK
+
+🤖 他LLMへ提供するときの運用フロー（超シンプル化）
+あなたがやるのは毎回これだけ：
+
+プロジェクトに変更があった
+
+sync-project.sh を実行
+
+SPEC_SYNC.md を LLM に貼る
+
+LLM はその内容から完全に状況を再構築できる
+
+
+🔍 この仕組みの目的
+
+あなたが毎回、記憶喪失状態の LLM に対して
+「プロジェクト全体の状況」を説明するのは現実的ではないので、
+
+👉 1 ファイルだけ送れば全情報が伝わるように自動生成する仕組み
+
+を作りました。
+
+そのファイルは：
+
+📌 SPECIFICATION/SPEC_SYNC.md
+
+このファイルには以下が自動で入ります：
+
+プロジェクトの ディレクトリ全構造（ls -R）
+
+Git 状況（git status）
+
+差分（git diff --name-status）
+
+NPM Workspaces（package.jsonの内容）
+
+LLMへの送信用メタ説明
+
+
+
+🔄 この仕組みのメリット
+
+あなたが説明文章を毎回書く必要なし
+
+LLM側は SPEC_SYNC.md だけで100%回復
+
+ディレクトリ構造、変更差分、設定情報、全部自動抽出
+
+あなたはただ 1 スクリプト実行 → 1 ファイル送信 するだけ
+
+
+VSCode の workspace 設定は、
+プロジェクト全体の認識構造を LLM・人間・VSCode が共有するための必須ピース です。
+
+VSCode の設定ファイルとは？
+ファイル	内容
+.vscode/settings.json	Lint, フォーマット、TypeScript のパス、自動インポート設定
+.vscode/launch.json	デバッガ設定（Node / TS / Jest / Sandbox など）
+.vscode/tasks.json	Lint・ビルド・sync-project.sh 実行タスク等
+GLIA.code-workspace	ワークスペース構造（優先度：最重要）
+
+あなたのプロジェクトは
+
+/GLIA-V1/SPECIFICATION（仕様）
+
+/GLIA-V1/ANTIGRAVITY_IMPL（実装）
+
+/GLIA-V1/TEMP（実験・検証・一次保存）
+
+に分離されているため、ワークスペースでこれらの役割を VSCode に理解させる必要があります。
+
+なぜ？（LLM 的にも重要）
+
+VSCode が GLIA-V1 を完全に認識
+
+LLM がワークスペース構造を再構築可能
+
+誤ったフォルダを解析して無駄な回答をしなくなる
+
+TEMP 以下は「解析するな」「生成するな」という指示が入る
+
+Antigravity 向け実装が「迷わず ANTIGRAVITY_IMPL にファイルを作る」ようになる
+
+あなたの作業負荷が大幅に下がる。
+
+🧱 Workspace の役割分担
+● SPECIFICATION（仕様）
+
+LLM に渡すドキュメント
+
+sync-project.sh が自動生成する参照資料
+
+あなたが唯一メンテナンスするフォルダ
+
+● ANTIGRAVITY_IMPL（実装）
+
+Antigravity が書くコード
+
+全LLMが触ってよい領域
+
+実際の TypeScript 実装・UML 出力・テストコード
+
+● TEMP（あなたの安全領域）
+
+自由に破棄可能
+
+LLM には明示しない
+
+試験スクリプトや過剰バックアップの隔離場所
+
+VSCode workspace がこれを正確に伝える。
+
+🔗 最終目的：あなたは「workspace ファイルだけ渡して」LLM に作業再開させられる
+
+記憶喪失LLMに：
+
+「以下の2つだけ読め」
+
+SPECIFICATION/SPEC_SYNC.md
+
+GLIA.code-workspace
+
+と指示すれば復旧できるようになる。

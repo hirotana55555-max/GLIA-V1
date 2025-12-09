@@ -1,0 +1,17 @@
+{
+  "$id": "https://glia.toon/schema/instruction.json",
+  "title": "Structured Instruction",
+  "type": "object",
+  "required": ["action"],
+  "properties": {
+    "action": {
+      "type": "string",
+      "enum": ["navigate", "click", "input", "extract", "noop"]
+    },
+    "target": { "type": "string" },
+    "value": { "type": ["string", "null"] },
+    "options": { "type": "object" },
+    "meta": { "type": "object" }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,21 @@
+{
+    "name": "@glia/api-client",
+    "version": "0.1.0",
+    "description": "Unified API Client for GLIA Swarm",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "tsc",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "dependencies": {
+        "axios": "^1.6.2",
+        "zod": "^3.22.4",
+        "dotenv": "^16.3.1"
+    },
+    "devDependencies": {
+        "typescript": "^5.3.0",
+        "@types/node": "^20.10.0"
+    },
+    "license": "MIT"
+}

@@ -1,0 +1,50 @@
+ブランチ master
+Your branch is up to date with 'origin/master'.
+
+Changes not staged for commit:
+  (use "git add/rm <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   SPECIFICATION/SPECIFICATION.md
+	deleted:    SPECIFICATION/SPECIFICATION_20251205_2.bak
+	deleted:    SPECIFICATION/SPECIFICATION_251204.bak
+	deleted:    SPECIFICATION/SPECIFICATION_251204_2.bak
+	deleted:    SPECIFICATION/SPECIFICATION_251205.bak
+	deleted:    SPECIFICATION/SPECIFICATION_251206.bak
+	modified:   package-lock.json
+	modified:   packages/browser-manager/package.json
+	modified:   packages/browser-manager/src/index.ts
+	modified:   packages/browser-manager/src/types.ts
+
+追跡されていないファイル:
+  (use "git add <file>..." to include in what will be committed)
+	ANTIGRAVITY_IMPL/
+	GLIA.code-workspace
+	SPECIFICATION/API_REFERENCE.md
+	SPECIFICATION/Backup/
+	SPECIFICATION/ChatGPT_SPECIFICATION_251207.md
+	SPECIFICATION/GIT_STATUS.txt
+	SPECIFICATION/GLIA_DEVELOPMENT_PHASE.md
+	SPECIFICATION/GLIA_PROJECT_OVERVIEW.md
+	SPECIFICATION/GLIA_PROJECT_TREE.md
+	SPECIFICATION/GLIA_ROADMAP.md
+	SPECIFICATION/GLIA_SYSTEM_ARCHITECTURE.md
+	SPECIFICATION/PROJECT_SYNC_PACKET.md
+	SPECIFICATION/Readme
+	SPECIFICATION/TOON_SCHEMA.md
+	SPECIFICATION/UML_FULL.md
+	SPECIFICATION/UML_FULL.puml
+	SPECIFICATION/sync-project.sh
+	docs/
+	integration-test/antigravity-harness.js
+	integration-test/antigravity-harness.ts
+	integration-test/peer-review.js
+	logs/
+	packages/api-client/
+	packages/audit/
+	packages/browser-manager/src/manager.ts
+	packages/browser-manager/src/resource-pool.ts
+	packages/sie/
+	packages/swarm/
+	packages/toon/
+
+no changes added to commit (use "git add" and/or "git commit -a")

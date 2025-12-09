@@ -5,9 +5,12 @@
  */
 
 // 名前付きエクスポート - 正しい再エクスポート構文
-export { BrowserManager } from './BrowserManager';
-export { ProcessManager } from './ProcessManager';
-export { MemoryProfiler } from './MemoryProfiler';
+export * from './types';
+export * from './BrowserManager';
+export * from './ProcessManager';
+export * from './MemoryProfiler';
+export * from './resource-pool';
+export * from './manager';
 
 // 型の再エクスポート
 export type {

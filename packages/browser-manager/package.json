@@ -20,6 +20,9 @@
   "peerDependencies": {
     "playwright": "^1.40.0"
   },
+  "dependencies": {
+    "@glia/audit": "0.1.0"
+  },
   "keywords": [
     "browser",
     "resource",

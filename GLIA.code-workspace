@@ -1,0 +1,13 @@
+{
+  "folders": [
+    { "path": "." },
+    { "path": "SPECIFICATION" },
+    { "path": "ANTIGRAVITY_IMPL" },
+    { "path": "TEMP" }
+  ],
+  "settings": {
+    "search.exclude": {
+      "**/TEMP/**": true
+    }
+  }
+}
