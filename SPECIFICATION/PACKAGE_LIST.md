@@ -1,5 +1,5 @@
 # Package Information
-Generated: 2025年 12月 10日 水曜日 01:05:28 JST
+Generated: 2025年 12月 12日 金曜日 00:01:04 JST
 ## Root package.json
 ```json
 {

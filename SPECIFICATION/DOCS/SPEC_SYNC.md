@@ -57,8 +57,10 @@ SPECIFICATION/META/PACKAGE_LIST.md
 SPECIFICATION/PACKAGE_LIST.md
 SPECIFICATION/PROJECT_SYNC_PACKET.md
 SPECIFICATION/Review_Phase_2_5/DeepSeek_review_Phase_2_5.md
+SPECIFICATION/Review_Phase_2_5/Grok_review_Phase_2_5.md
 SPECIFICATION/Review_Phase_2_5/Manus_review_Phase_2_5.md
 SPECIFICATION/Review_Phase_2_5/Phase_2_5_Specification.md
+SPECIFICATION/Review_Phase_2_5/Qwen3Next_review_Phase_2_5.md
 SPECIFICATION/SCRIPTS/check-spec.sh
 SPECIFICATION/SCRIPTS/gen-uml.sh
 SPECIFICATION/SCRIPTS/sync-project.sh
@@ -91,23 +93,22 @@ SPECIFICATION/UML_FULL.md
 /SPECIFICATION/META
 /SPECIFICATION/Review_Phase_2_5
 /SPECIFICATION/SCRIPTS
+/SPECIFICATION/TEMP_workspace
 /SPECIFICATION/UML
 /apps
 /apps/electron-app
 /apps/electron-app/src
 /docs
-/integration-test
 ```
 
 ## 📌 2. Git 状況
 ```
-ブランチ master
-Your branch is up to date with 'origin/master'.
+ブランチ docs/phase2.5-spec-update
+Your branch is up to date with 'origin/docs/phase2.5-spec-update'.
 
 Changes not staged for commit:
   (use "git add <file>..." to update what will be committed)
   (use "git restore <file>..." to discard changes in working directory)
-	modified:   .gitignore
 	modified:   SPECIFICATION/DOCS/SPEC_SYNC.md
 	modified:   SPECIFICATION/GIT_STATUS.md
 	modified:   SPECIFICATION/GLIA_PROJECT_TREE.md
@@ -115,39 +116,13 @@ Changes not staged for commit:
 
 追跡されていないファイル:
   (use "git add <file>..." to include in what will be committed)
-	SPECIFICATION/DOCS/glia_antigravity_harness.md
-	SPECIFICATION/DOCS/glia_browser_manager.md
-	SPECIFICATION/DOCS/glia_integrated_architecture.md
-	SPECIFICATION/DOCS/glia_sie_executor.md
-	SPECIFICATION/DOCS/glia_swarm_toon.md
-	SPECIFICATION/Review_Phase_2_5/DeepSeek_review_Phase_2_5.md
-	SPECIFICATION/Review_Phase_2_5/Manus_review_Phase_2_5.md
-	SPECIFICATION/Review_Phase_2_5/Phase_2_5_Specification.md
-	SPECIFICATION/UML/BrowserManager_Component.png
-	SPECIFICATION/UML/BrowserManager_Dispatch.png
-	SPECIFICATION/UML/GLIA_Integrated_Architecture.png
-	SPECIFICATION/UML/Integrated_Sequence.png
-	SPECIFICATION/UML/Resource_Recycle.png
-	SPECIFICATION/UML/SIE_Component.png
-	SPECIFICATION/UML/SIE_Dispatch.png
-	SPECIFICATION/UML/SIE_Sequence.png
-	SPECIFICATION/UML/SIE_Validation.png
-	SPECIFICATION/UML/SIE_to_BrowserManager.png
-	SPECIFICATION/UML/Safety_Flow.png
-	SPECIFICATION/UML/Swarm_Aggregation.png
-	SPECIFICATION/UML/Swarm_Parallel.png
-	SPECIFICATION/UML/Swarm_TOON_Architecture.png
-	SPECIFICATION/UML/Swarm_TOON_Sequence.png
-	SPECIFICATION/UML/TOON_Normalization.png
-	SPECIFICATION/UML/UML_FULL.png
-	SPECIFICATION/UML/UML_FULL.puml
+	SPECIFICATION/Review_Phase_2_5/Qwen3Next_review_Phase_2_5.md
 
 no changes added to commit (use "git add" and/or "git commit -a")
 ```
 
 ## 📌 3. Git 差分（変更ファイル）
 ```
-M	.gitignore
 M	SPECIFICATION/DOCS/SPEC_SYNC.md
 M	SPECIFICATION/GIT_STATUS.md
 M	SPECIFICATION/GLIA_PROJECT_TREE.md
@@ -186,7 +161,7 @@ M	SPECIFICATION/PACKAGE_LIST.md
 ```
 
 ## 📌 5. メタ情報
-- 生成日時: 2025年 12月 10日 水曜日 01:05:28 JST
+- 生成日時: 2025年 12月 12日 金曜日 00:01:04 JST
 - プロジェクトルート: /home/els/Antigravity/GLIA-V1
 - このファイルだけを読めば LLM が全体を理解可能
 
