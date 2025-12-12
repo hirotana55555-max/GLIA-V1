@@ -182,5 +182,5 @@ bash SPECIFICATION/SCRIPTS/check-spec.sh
 
 
 各LLM向けワークスペースとして、/home/els/Antigravity/GLIA-V1/TEMP以下にファイルやフォルダを自由に生成できます。
-許可なくTEMP以外のファイルやフォルダを改変しないこと。
+許可なくGLIA-V1/SPECIFICATION/TEMP_workspace以外のファイルやフォルダを改変しないこと。
 TEMPフォルダ以下は人間により不定期に削除される。

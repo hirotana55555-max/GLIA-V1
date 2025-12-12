@@ -1,0 +1,55 @@
+{
+  "COPY_PASTE_PROTOCOL": {
+    "version": "V2.0",
+    "purpose": "Prevent copy-paste failures in WEB-BASED LLM chat interfaces",
+    "last_updated": "2025-12-12",
+    "applies_to": "ALL LLMs interacting with GLIA project via web interfaces",
+    
+    "web_ui_copy_paste_issues": {
+      "actual_problem": "In web chat interfaces, Markdown code blocks cause selection errors when users try to copy commands",
+      "specific_issues": [
+        "Triple backticks (```) force selection of entire code block including language tags",
+        "Mixed content (buttons like 'Copy', 'Download') gets accidentally selected",
+        "Line numbers or syntax highlighting elements interfere",
+        "Users end up copying Markdown syntax instead of pure commands"
+      ],
+      "user_experience": "Extremely frustrating - happens repeatedly in daily work"
+    },
+    
+    "absolute_rules_for_web_chat_output": {
+      "rule_1": "NEVER use Markdown code blocks (```) when providing terminal commands for web chat users",
+      "rule_2": "Provide commands as PLAIN TEXT lines that can be easily selected",
+      "rule_3": "Separate explanatory text clearly from executable commands with blank lines",
+      "rule_4": "If you must show code structure, use simple indentation without backticks",
+      "rule_5": "Remember: The user needs to SELECT with mouse and COPY - make that easy"
+    },
+    
+    "formatting_examples": {
+      "web_chat_bad": "```bash\ncd /home/user\n./script.sh\n```",
+      "web_chat_good": "Run these commands:\n\ncd /home/user\n./script.sh",
+      "complex_bad": "First, backup:\n```\n./backup.sh\n```\nThen check status:\n```\n./status.sh\n```",
+      "complex_good": "First command:\n./backup.sh\n\nSecond command:\n./status.sh"
+    },
+    
+    "llm_psychology_breakdown": {
+      "why_llms_do_this": "LLMs are trained on documentation where code blocks are standard",
+      "the_misunderstanding": "LLMs think 'code blocks help readability' but ignore 'they hurt copy-paste'",
+      "user_context_gap": "LLMs don't understand the user is in a WEB CHAT, not reading documentation",
+      "feedback_loop": "LLMs never see the failed copy-paste attempts, so they never learn"
+    },
+    
+    "self_check_for_llms": {
+      "before_output": "IMAGINE: User will select text with mouse in web chat",
+      "check_1": "Are there ``` markers? REMOVE THEM",
+      "check_2": "Can the user select JUST the command without extra text?",
+      "check_3": "Would this work if pasted directly into terminal?",
+      "final_test": "Pretend YOU have to copy-paste this - would it work smoothly?"
+    },
+    
+    "integration_instructions": {
+      "with_constitution": "This protocol OVERRIDES any 'best practices' about code formatting",
+      "priority": "Copy-paste usability > Pretty formatting",
+      "reminder": "GLIA itself will eventually solve this, but until then, FOLLOW THESE RULES"
+    }
+  }
+}

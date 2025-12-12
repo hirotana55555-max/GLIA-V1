@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+set -e
+
+echo "🔧 GLIA Project Sync Started..."
+
+ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+SPEC_DIR="$ROOT/SPEC"
+DOCS_DIR="$SPEC_DIR/ForLLM"
+mkdir -p "$DOCS_DIR"
+
+# 出力ファイル（SPEC_SYNC.mdのみ）
+OUT_SYNC="$DOCS_DIR/SPEC_SYNC.md"
+
+# Git情報
+GIT_STATUS=$(git -C "$ROOT" status --untracked-files=all 2>/dev/null || echo "Git status not available")
+GIT_DIFF=$(git -C "$ROOT" diff --name-status 2>/dev/null || echo "Git diff not available")
+
+# package.json
+if [ -f "$ROOT/package.json" ]; then
+    PACKAGE_INFO=$(cat "$ROOT/package.json")
+else
+    PACKAGE_INFO="package.json not found"
+fi
+
+# ==========================================
+# SPEC_SYNC.md 生成（集約版）
+# ==========================================
+echo "📄 Generating SPEC_SYNC.md..."
+
+{
+echo "# GLIA PROJECT SYNC PACKET"
+echo "**LLM はこの 1 ファイルだけ読めば、プロジェクト全体を最新状態で理解できます。**"
+echo ""
+echo "## 📌 1. プロジェクト概要"
+echo "- **プロジェクト名**: GLIA (GLIA-Learned Intelligent Automation)"
+echo "- **目的**: LLM群による自律的ソフトウェア開発プラットフォーム"
+echo "- **最終目標**: 非エンジニアでも複雑なブラウザアプリを作れること"
+echo "- **主要コンポーネント**: Orchestrator, Swarm, SIE, BrowserManager, Cognize, DEM, AuditLogger"
+echo ""
+echo "## 📌 2. 最新仕様書の位置"
+echo "- **主仕様書**: \`SPEC/ForLLM/SPEC_PACKAGE.txt\` (結合版、別途生成が必要)"
+echo "- **仕様書ソース**: \`SPEC/SPEC_DOC/\` (編集対象)"
+echo "- **仕様書更新日**: $(date)"
+echo ""
+echo "## 📌 3. プロジェクト構造"
+echo '```'
+echo "### 主要設定ファイル"
+find "$ROOT" -maxdepth 3 -type f \( \
+    -name "package.json" \
+    -o -name "tsconfig.json" \
+    -o -name "*.config.js" \
+    -o -name "*.config.ts" \
+    -o -name "*.config.json" \
+\) ! -path "*/node_modules/*" ! -path "*/.git/*" ! -path "*/dist/*" ! -path "*/SPECIFICATION/*" 2>/dev/null | sed "s|$ROOT/||" | sort
+echo ""
+# Source Directories
+for dir in packages apps; do
+    if [ -d "$ROOT/$dir" ]; then
+        echo "### ${dir}/"
+        find "$ROOT/$dir" -maxdepth 2 -type f \( -name "*.ts" -o -name "*.js" \) \
+            ! -path "*/node_modules/*" ! -path "*/.git/*" ! -path "*/dist/*" ! -path "*/SPECIFICATION/*" 2>/dev/null \
+            | sed "s|$ROOT/||" | head -15
+        echo
+    fi
+done
+echo "### SPEC 構造（新しい仕様書システム）"
+find "$SPEC_DIR" -maxdepth 2 -type f \( -name "*.md" -o -name "*.txt" -o -name "*.sh" \) \
+    ! -path "*/node_modules/*" ! -path "*/.git/*" 2>/dev/null | sed "s|$ROOT/||" | sort
+echo '```'
+echo ""
+echo "## 📌 4. Git 状態（簡潔版）"
+echo '```'
+echo "$GIT_STATUS" | head -20
+if [ $(echo "$GIT_STATUS" | wc -l) -gt 20 ]; then
+    echo "...（さらに $(($(echo "$GIT_STATUS" | wc -l) - 20)) 行）"
+fi
+echo '```'
+echo ""
+if [ -n "$GIT_DIFF" ] && [ "$GIT_DIFF" != "Git diff not available" ]; then
+    echo "## 📌 5. Git 差分（変更ファイル）"
+    echo '```'
+    echo "$GIT_DIFF"
+    echo '```'
+    echo ""
+fi
+echo "## 📌 6. パッケージ情報（要約）"
+echo '```json'
+echo "$PACKAGE_INFO" | head -30
+if [ $(echo "$PACKAGE_INFO" | wc -l) -gt 30 ]; then
+    echo "...（さらに $(($(echo "$PACKAGE_INFO" | wc -l) - 30)) 行）"
+fi
+echo '```'
+echo ""
+echo "## 📌 7. 推奨LLMワークフロー"
+echo "1. **まずこのファイルを読む** → プロジェクト全体を把握"
+echo "2. **仕様書詳細が必要なら** → \`SPEC/ForLLM/SPEC_PACKAGE.txt\` を別途生成・提供"
+echo "3. **バックアップ情報** → \`SPEC/ForLLM/SPEC_BACKUP_INFO.md\`（バックアップ時に生成）"
+echo ""
+echo "## 📌 8. 重要ルール"
+echo "- **SPECIFICATION/ 以下は古い構造**（移行中）のため原則無視"
+echo "- **全ての仕様は SPEC/SPEC_DOC/ 以下を信頼源**とする"
+echo "- **実装変更は常にカプセル化**された形で行い、既存ファイルを直接上書き禁止"
+echo "- **仕様書更新時は必ず** \`backup_spec.sh\` を実行してから編集"
+echo ""
+echo "---"
+echo "*生成日時: $(date)*"
+echo "*プロジェクトルート: $ROOT*"
+} > "$OUT_SYNC"
+
+echo "✨ Sync complete. Output: $OUT_SYNC"
+echo "📋 LLMワークフロー: この1ファイルを提供し、必要に応じて仕様書を別途生成"

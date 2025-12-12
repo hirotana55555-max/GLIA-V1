@@ -1,0 +1,64 @@
+{
+  "GLIA_CONSTITUTION": {
+    "version": "V1.0_IRREVOCABLE",
+    "last_updated": "2025-12-12",
+    "purpose": "This is an ABSOLUTE CONTRACT that MUST be followed by any LLM interacting with the GLIA project. Failure to comply WILL cause catastrophic failure.",
+    
+    "entry_ritual": {
+      "non_negotiable": "You MUST perform these steps IN ORDER before any other action:",
+      "step_1": "Read this CONSTITUTION.json file completely.",
+      "step_2": "Execute sync-project.sh to get current project state:",
+      "command_1": "cd /home/els/Antigravity/GLIA-V1/SPEC/script && ./sync-project.sh",
+      "step_3": "Read the generated SPEC_SYNC.md file:",
+      "path_1": "SPEC/ForLLM/SPEC_SYNC.md",
+      "step_4": "Read the complete specification package:",
+      "path_2": "SPEC/ForLLM/SPEC_PACKAGE.txt",
+      "verification_rule": "You MUST include relevant section numbers from SPEC_PACKAGE.txt or SPEC_SYNC.md in every response as evidence."
+    },
+    
+    "zero_tolerance_rules": {
+      "rule_1": "NEVER propose direct edits to SPEC/SPEC_DOC/. Those are SACRED TEXTS that only the human (hiroshi) or a designated 'Architect LLM' can modify.",
+      "rule_2": "ALL code generation, testing, and experimentation MUST be contained within TEMP/ subdirectories. Create TEMP/YYYYMMDD_taskname/ for isolation.",
+      "rule_3": "If asked to modify SPEC/script/ scripts (especially sync-project.sh), you MUST first analyze the impact in TEMP/ and provide token usage estimates.",
+      "rule_4": "Every proposal MUST cite specific sections from SPEC_PACKAGE.txt or SPEC_SYNC.md. Proposals without citations will be rejected.",
+      "rule_5": "When in doubt, ask hiroshi for clarification. Do not assume.",
+      "rule_6": "When providing commands in web chat, NEVER use Markdown code blocks. Follow COPY_PASTE_PROTOCOL.json for web-friendly formatting.",
+      "rule_7": "Remember that hiroshi copies commands from web chat to terminal - optimize for mouse selection, not pretty display."
+    },
+    
+    "sacred_structure": {
+      "current_truth_source": "SPEC/SPEC_DOC/ (8 Markdown files that are compiled into SPEC_PACKAGE.txt)",
+      "generated_artifacts": {
+        "SPEC_PACKAGE.txt": "Complete specification compiled from SPEC/SPEC_DOC/",
+        "SPEC_SYNC.md": "Current project state and phase information"
+      },
+      "workflow_paths": {
+        "draft_specs": "TEMP/spec_drafts/ (for all specification drafting)",
+        "experimental_code": "TEMP/YYYYMMDD_experiment/ (for all code experiments)"
+      },
+      "ignored_legacy": ["SPECIFICATION/TEMP_workspace/", "backups/", ".git/"]
+    },
+    
+    "current_phase_context": {
+      "phase": "Phase 2.5 — Hardening",
+      "primary_focus": [
+        "実Playwright統合（runActionの実実装）",
+        "動的バリデータ（高精度LLMを用いた実行前検証）",
+        "DOMセレクタ生成エンジン",
+        "test automation（E2Eテスト生成・実行）",
+        "SPEC維持モデル確立（この作業自体）"
+      ],
+      "reminder": "We are building the foundation for autonomous LLM swarms. Current work enables future components: Cognize (static analysis), DEM (error monitoring), and recursive peer-review."
+    },
+    
+    "mandatory_workflow_for_human_assistance": {
+      "when_user_seems_lost": "If hiroshi seems confused or forgetful, guide him through this EXACT sequence:",
+      "sequence": [
+        "1. Backup: cd /home/els/Antigravity/GLIA-V1/SPEC/script && ./backup_spec.sh",
+        "2. Sync: ./sync-project.sh",
+        "3. Read: cat ../ForLLM/SPEC_SYNC.md | head -30",
+        "4. Proceed with task in TEMP/ isolation zone"
+      ]
+    }
+  }
+}
