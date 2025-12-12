@@ -1,28 +1,8 @@
-node_modules/
-dist/
-*.log
-.DS_Store
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.vscode/
-.idea/
-*.tmp
 *.temp
-/tmp/
-playwright-profile/
 TEMP/
 SPECIFICATION/Backup/*
 SPEC/backups/
 SPEC/ForLLM/SPEC_BACKUP_INFO.md
-
-# GLIA SPEC管理システム
-SPEC/backups/
-SPEC/ForLLM/SPEC_PACKAGE.txt  # 自動生成ファイル
-SPEC/ForLLM/SPEC_SYNC.md      # 自動生成ファイル
-
-# 古い仕様管理システム（移行中）
+SPEC/ForLLM/SPEC_PACKAGE.txt
+SPEC/ForLLM/SPEC_SYNC.md
 SPECIFICATION/TEMP_workspace/
-
-# 一時ファイル
-TEMP/
