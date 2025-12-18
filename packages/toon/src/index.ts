@@ -93,3 +93,24 @@ export function buildProposal(missionId: string, content: string, instructions: 
         metadata
     };
 }
+
+/**
+ * 5. Error Handling Types
+ */
+export type SwarmErrorCode = 
+    | "API_ERROR" 
+    | "VALIDATION_ERROR" 
+    | "SIE_EXECUTION_ERROR" 
+    | "CONTEXT_OVERFLOW"
+    | "UNKNOWN_ERROR";
+
+export class SwarmError extends Error {
+    constructor(
+        public readonly code: SwarmErrorCode,
+        message: string,
+        public readonly metadata?: Record<string, any>
+    ) {
+        super(message);
+        this.name = "SwarmError";
+    }
+}
