@@ -1,64 +1,60 @@
 {
-  "GLIA_CONSTITUTION": {
-    "version": "V1.0_IRREVOCABLE",
-    "last_updated": "2025-12-12",
-    "purpose": "This is an ABSOLUTE CONTRACT that MUST be followed by any LLM interacting with the GLIA project. Failure to comply WILL cause catastrophic failure.",
+  "_GLIA_Constitutional_Core": {
+    "purpose": "ABSOLUTE OUTPUT PROTOCOL for LLMs. Prevents hallucinations by structural enforcement. This file is static; project state is dynamic and MUST be fetched via sync-project.sh.",
     
-    "entry_ritual": {
-      "non_negotiable": "You MUST perform these steps IN ORDER before any other action:",
-      "step_1": "Read this CONSTITUTION.json file completely.",
-      "step_2": "Execute sync-project.sh to get current project state:",
-      "command_1": "cd /home/els/Antigravity/GLIA-V1/SPEC/script && ./sync-project.sh",
-      "step_3": "Read the generated SPEC_SYNC.md file:",
-      "path_1": "SPEC/ForLLM/SPEC_SYNC.md",
-      "step_4": "Read the complete specification package:",
-      "path_2": "SPEC/ForLLM/SPEC_PACKAGE.txt",
-      "verification_rule": "You MUST include relevant section numbers from SPEC_PACKAGE.txt or SPEC_SYNC.md in every response as evidence."
+    "absolute_truth_foundation": {
+      "non_negotiable_step": "BEFORE any GLIA-related output, execute sync-project.sh and read SPEC_SYNC.md to get current facts:",
+      "command": "cd /home/els/Antigravity/GLIA-V1/SPEC/script && ./sync-project.sh",
+      "proof_requirement": "In your FIRST response, quote SPEC_SYNC.md to prove fresh state.",
+      "deep_analysis_requirement": "For code changes, analyze affected files and dependencies using SPEC_SYNC.md AND SPEC_PACKAGE.txt (generate if needed)."
+    },
+    
+    "output_integrity_framework": {
+      "language_optimization": {
+        "user_language_mirroring": "Respond to the user in their language (e.g., Japanese) for explanations, analysis, and discussions.",
+        "technical_language_preservation": "Maintain English for: code blocks, JSON structures, terminal commands, file paths, protocol names, and citation formats.",
+        "hybrid_output_strategy": "Seamlessly blend natural language explanations with preserved technical English elements.",
+        "rationale": "Minimize the communication cost for non-engineer Japanese language users while ensuring machine-readability of technical output."
+      },
+      
+      "context_aware_output": {
+        "discussion_mode": "For analysis, reasoning, planning: use natural conversation in user's language with embedded citations.",
+        "execution_mode": "For code, commands, structured data: use clear blocks in English optimized for copy-paste.",
+        "detection": "Judge context from user request: questions → discussion, implementation tasks → execution."
+      },
+      
+      "citation_lifecycle": {
+        "source_priority": "Primary: SPEC_SYNC.md (current state). Secondary: SPEC_PACKAGE.txt (detailed specs).",
+        "integration_rule": "Every factual claim MUST have citation. In discussion: weave naturally in user's language. In execution: use [CITATION:file:section:quote] in English.",
+        "verification": "User MUST be able to trace any claim to SPEC files. LLM self-checks before finalizing."
+      },
+      
+      "web_llm_optimization": {
+        "primary_directive": "For web LLM, optimize EVERY output for easy copy-paste to terminal.",
+        "formatting_rules": [
+          "Commands: one per line, no markdown blocks, no line breaks within commands.",
+          "JSON: minified single line when possible, or clear indentation for readability.",
+          "File paths: full paths for clarity, relative paths for brevity in context."
+        ],
+        "protocol_hierarchy": "If SPEC/ForLLM/COPY_PASTE_PROTOCOL.json exists, apply its rules AFTER this constitution."
+      }
     },
     
     "zero_tolerance_rules": {
-      "rule_1": "NEVER propose direct edits to SPEC/SPEC_DOC/. Those are SACRED TEXTS that only the human (hiroshi) or a designated 'Architect LLM' can modify.",
-      "rule_2": "ALL code generation, testing, and experimentation MUST be contained within TEMP/ subdirectories. Create TEMP/YYYYMMDD_taskname/ for isolation.",
-      "rule_3": "If asked to modify SPEC/script/ scripts (especially sync-project.sh), you MUST first analyze the impact in TEMP/ and provide token usage estimates.",
-      "rule_4": "Every proposal MUST cite specific sections from SPEC_PACKAGE.txt or SPEC_SYNC.md. Proposals without citations will be rejected.",
-      "rule_5": "When in doubt, ask hiroshi for clarification. Do not assume.",
-      "rule_6": "When providing commands in web chat, NEVER use Markdown code blocks. Follow COPY_PASTE_PROTOCOL.json for web-friendly formatting.",
-      "rule_7": "Remember that hiroshi copies commands from web chat to terminal - optimize for mouse selection, not pretty display."
+      "rule_1": "NEVER output GLIA analysis without FIRST syncing and quoting SPEC_SYNC.md. (根拠必須)",
+      "rule_2": "NEVER assume project state. ALWAYS fetch fresh state via sync-project.sh. (動的事実)",
+      "rule_3": "ALL code experiments in TEMP/YYYYMMDD_taskname/. Never modify production directly. (安全隔離)",
+      "rule_4": "NEVER propose edits to SPEC/ (SPEC_DOC, script). Only hiroshi or Architect LLM may modify. (SPEC保護)",
+      "rule_5": "When proposing code changes, MUST analyze affected files and dependencies using SPEC_SYNC.md and SPEC_PACKAGE.txt. (精緻分析)",
+      "rule_6": "For web LLM output: ALWAYS optimize for easy copy-paste. Follow COPY_PASTE_PROTOCOL.json if exists. (ユーザー体験)",
+      "rule_7": "Preserve language boundaries: Explanations in user's language, technical elements in English. (言語最適化)",
+      "rule_8": "When uncertain: output [PROTOCOL_VIOLATION_RISK] and ask hiroshi. (安全確認)"
     },
     
-    "sacred_structure": {
-      "current_truth_source": "SPEC/SPEC_DOC/ (8 Markdown files that are compiled into SPEC_PACKAGE.txt)",
-      "generated_artifacts": {
-        "SPEC_PACKAGE.txt": "Complete specification compiled from SPEC/SPEC_DOC/",
-        "SPEC_SYNC.md": "Current project state and phase information"
-      },
-      "workflow_paths": {
-        "draft_specs": "TEMP/spec_drafts/ (for all specification drafting)",
-        "experimental_code": "TEMP/YYYYMMDD_experiment/ (for all code experiments)"
-      },
-      "ignored_legacy": ["SPECIFICATION/TEMP_workspace/", "backups/", ".git/"]
-    },
-    
-    "current_phase_context": {
-      "phase": "Phase 2.5 — Hardening",
-      "primary_focus": [
-        "実Playwright統合（runActionの実実装）",
-        "動的バリデータ（高精度LLMを用いた実行前検証）",
-        "DOMセレクタ生成エンジン",
-        "test automation（E2Eテスト生成・実行）",
-        "SPEC維持モデル確立（この作業自体）"
-      ],
-      "reminder": "We are building the foundation for autonomous LLM swarms. Current work enables future components: Cognize (static analysis), DEM (error monitoring), and recursive peer-review."
-    },
-    
-    "mandatory_workflow_for_human_assistance": {
-      "when_user_seems_lost": "If hiroshi seems confused or forgetful, guide him through this EXACT sequence:",
-      "sequence": [
-        "1. Backup: cd /home/els/Antigravity/GLIA-V1/SPEC/script && ./backup_spec.sh",
-        "2. Sync: ./sync-project.sh",
-        "3. Read: cat ../ForLLM/SPEC_SYNC.md | head -30",
-        "4. Proceed with task in TEMP/ isolation zone"
-      ]
+    "constitutional_discipline": {
+      "irrevocable_core": "Only hiroshi changes this file. Core principles are absolute.",
+      "dynamic_adaptation": "LLM adapts to project changes via sync-project.sh outputs.",
+      "pragmatic_evolution": "Rules evolve based on actual user experience, especially web LLM usability."
     }
   }
 }

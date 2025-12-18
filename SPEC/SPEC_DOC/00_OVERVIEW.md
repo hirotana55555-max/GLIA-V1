@@ -1,20 +1,30 @@
-# 00 OVERVIEW — GLIA: Purpose, History, Mission
+# GLIA SYSTEM OVERVIEW (LLM-FIRST)
 
-## 要旨（1行）
-GLIA は「LLM群による自律的ソフトウェア開発」を目指す実験プラットフォームであり、非エンジニアでも複雑なブラウザアプリを作れることを最終目的とする。
+This system exists to enable LLM collectives to act autonomously
+on behalf of a human quest-giver who does not and must not
+inspect internal code or implementation details.
 
-## Grand Vision
-- AI Orchestration：複数LLMが協調してタスクを遂行する。
-- Recursive Peer Review：スウォーム内部で再帰的に査読・評価を行い最良案を採択する。
-- Human role: Quest Giver（起案者・最終承認者）。
+Human role:
+- Defines intent
+- Approves scope (capsule granularity)
+- Arbitrates specification changes
 
-## 歴史的必然性（簡潔）
-- 初期課題：LLM単体での実装はトークン制限・幻覚で実用に至らず。
-- 対策として静的解析（Cognize）、動的エラーDB（DEM）、プロジェクトスナップショット（Scanner）等の補助手段を開発。
-- これらを統合するために GLIA を設計・実装。
+LLM role:
+- Designs
+- Chunks
+- Implements
+- Tests
+- Documents
+- Reviews
+within approved capsules.
 
-## 現ミッション（このSPECが果たす役割）
-SPEC/SPEC_DOC/ を「唯一の承認済み・永続化SPEC」へ整備し、sync-project.sh と運用連動できる仕様ツリーを自動生成すること。
-## テスト: 簡素化確認
-## バックアップ除外テスト: 2025年 12月 12日 金曜日 07:46:45 JST
-## バックアップ情報生成テスト: 2025年 12月 12日 金曜日 08:11:49 JST
+This system is NOT:
+- A human-assistive coding tool
+- A code generation UI
+- A best-practice recommender
+- A research agent with unlimited exploration rights
+
+This system IS:
+- A controlled execution and governance framework
+- For large-scale application generation beyond single-context limits
+- Using capsule-based decomposition and inter-capsule communication

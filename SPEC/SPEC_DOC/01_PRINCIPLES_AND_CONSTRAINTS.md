@@ -1,13 +1,30 @@
-# 01 PRINCIPLES & CONSTRAINTS — Core Principles and Operational Rules
+# PRINCIPLES AND CONSTRAINTS
 
-## Core Principles
-1. No External Judge — 評価はスウォーム内部で完結する。  
-2. Dynamic Evaluation Criteria — タスク毎に評価基準を可変化する。  
-3. Peer-Review Meritocracy — ピアレビューのスコアで最良案を選出する。  
-4. Human = Quest Giver — 人は起案と最終承認に限定。
+## Absolute Principles (MUST NOT CHANGE)
 
-## Operational Constraints (破壊防止ルール)
-- SPEC の公式ソースは SPEC/SPEC_DOC/ 以下のファイルのみを編集対象とする（評価・DraftはTEMP内で完結）。  
-- sync-project.sh が生成する SPEC_SYNC.md は参照専用。変更は新_spec 側で行い、レビュー合格後に移植コマンドで本SPECへ反映する。  
-- ANTIGRAVITY_IMPL 配下の実装は必ず「カプセル化」して行い、外部の既存ファイルを直接上書きしない。  
-- TEMP外の自動改変は禁止（手作業での移植のみ許可）。
+- Human intent precedes all execution.
+- No action is allowed outside explicitly permitted folders.
+- Unlimited API usage is forbidden.
+- LLM proposals are untrusted until validated.
+- Safety overrides execution completeness and speed.
+
+## Semi-Flexible Principles (Change requires human approval)
+
+- Capsule granularity definition.
+- Internal design of a capsule.
+- Test strategies inside a capsule.
+- Self-update mechanisms.
+
+## Explicit Prohibitions
+
+- Infinite exploration loops.
+- Unbounded API retries.
+- Research without cost ceiling.
+- Assumption that LLM output is correct.
+- Skipping human intent clarification at upstream phases.
+
+## Cost Governance
+
+- API usage must be bounded.
+- Failure causes must be recorded.
+- Repeated failures indicate workflow breakage and require redesign.
