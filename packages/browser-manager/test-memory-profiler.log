@@ -1,0 +1,15 @@
+🧪 MemoryProfiler 基本動作テスト
+[MemoryProfiler] プロセスメモリ監視開始
+⏳ 10秒間監視実行中...
+💾 プロセスメモリ: RSS: 75MB
+💾 プロセスメモリ: RSS: 75MB
+💾 プロセスメモリ: RSS: 63MB
+
+📈 最終統計:
+- 監視ページ数: 0
+- 履歴サイズ: 3
+- 平均JSヒープ: 0 MB
+- 平均RSS: 71 MB
+[MemoryProfiler] プロセスメモリ監視停止
+[MemoryProfiler] 全監視停止
+🎉 MemoryProfilerテスト完了

@@ -1,0 +1,42 @@
+🧪 リサイクルポリシーテスト（短縮バージョン）
+[MemoryProfiler] プロセスメモリ監視開始
+1. 複数コンテキスト作成...
+   コンテキスト 1 作成
+   コンテキスト 2 作成
+   コンテキスト 3 作成
+2. 初期統計:
+{
+  "totalBrowsers": 3,
+  "totalContexts": 3,
+  "totalPages": 0,
+  "activeContexts": 3,
+  "idleContexts": 0,
+  "totalRequests": 0,
+  "memory": {
+    "sampleCount": 0,
+    "minMB": 0,
+    "maxMB": 0,
+    "avgMB": 0
+  }
+}
+3. リリースしてアイドル状態に...
+4. 10秒待機（定期クリーンアップ実行）...
+5. 最終統計:
+{
+  "totalBrowsers": 3,
+  "totalContexts": 0,
+  "totalPages": 0,
+  "activeContexts": 0,
+  "idleContexts": 0,
+  "totalRequests": 0,
+  "memory": {
+    "sampleCount": 1,
+    "minMB": 0,
+    "maxMB": 0,
+    "avgMB": 67
+  }
+}
+6. 最終クリーンアップ...
+[MemoryProfiler] プロセスメモリ監視停止
+[MemoryProfiler] 全監視停止
+🎉 リサイクルポリシーテスト完了

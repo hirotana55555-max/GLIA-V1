@@ -13,7 +13,8 @@
         "@glia/toon": "0.1.0",
         "@glia/audit": "0.1.0",
         "@glia/sie": "0.1.0",
-        "@glia/api-client": "0.1.0"
+        "@glia/api-client": "0.1.0",
+        "@glia/prompt-core": "0.1.0"
     },
     "devDependencies": {
         "typescript": "^5.3.0",

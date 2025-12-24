@@ -1,0 +1,27 @@
+🧪 BrowserManager v2 基本動作テスト開始
+[MemoryProfiler] プロセスメモリ監視開始
+1. クリーンなコンテキスト取得...
+   ✅ コンテキスト取得成功
+2. ページを開いて動作確認...
+   ✅ ページ開設: "Example Domain"
+3. コンテキストリリース...
+4. リソース統計取得...
+   統計: {
+  "totalBrowsers": 1,
+  "totalContexts": 1,
+  "totalPages": 0,
+  "activeContexts": 1,
+  "idleContexts": 0,
+  "totalRequests": 0,
+  "memory": {
+    "sampleCount": 0,
+    "minMB": 0,
+    "maxMB": 0,
+    "avgMB": 0
+  }
+}
+5. クリーンアップ...
+[MemoryProfiler] プロセスメモリ監視停止
+[MemoryProfiler] 全監視停止
+   ✅ クリーンアップ完了
+🎉 基本動作テスト完了

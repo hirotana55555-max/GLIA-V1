@@ -1,5 +1,5 @@
 {
-  "name": "glia-prompt-core",
+  "name": "@glia/prompt-core",
   "version": "0.1.0",
   "description": "GLIA Project - Core Prompt Synthesis Engine",
   "main": "dist/index.js",

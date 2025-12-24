@@ -6,6 +6,7 @@ export interface AuditEvent {
     source: string;
     action: string;
     payload: any;
+    level?: "INFO" | "WARN" | "ERROR" | "DEBUG";
 }
 
 export class AuditLogger {
