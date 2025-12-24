@@ -1,25 +1,40 @@
-# 02 SYSTEM ARCHITECTURE — High-level Architecture
+# SYSTEM ARCHITECTURE
 
-## レイヤー（3.5 層）
-1. Browser (Chromium 実体)
-2. BrowserContext (Playwright/Context)
-3. Page (Tab/Frame 単位)
-3.5. Safe Execution Sandbox (SIE Executor)
+GLIA architecture is layered and directional.
 
-## コンポーネント配置（概要）
-- Electron App (Central Orchestrator + Operator UI)
-- Orchestrator / SwarmController（ミッション分割・集約）
-- SIE（Instruction validation + sandboxed execution）
-- BrowserManager（Playwright 統合・ResourcePool・PIDTracker）
-- Cognize（静的AST解析 / 依存グラフ）
-- Scanner / sync-project.sh（プロジェクトスナップショット・復元用）
-- DEM（ランタイムエラー収集・フィードバックループ）
-- AuditLogger（JSONL 形式の証跡保存）
+## Layers
+1. **Human Interface Layer** (Intent & Approval)
+2. **Swarm Orchestration Layer** (`packages/swarm`)
+   - Core Orchestrator: `packages/swarm/src/orchestrator.ts`
+   - Orchestrates Agents to solve Missions.
+3. **Planning & Validation Layer** (LLM / SIE)
+   - SIE (Structured Instruction Executor): Ensures safe browser automation.
+   - TOON (Task-Oriented Object Notation): Structured communication protocol (`packages/toon`).
+4. **Execution Layer** (Agents, Executors)
+   - Browser Agent (`packages/browser-agent`)
+   - Browser Manager (`packages/browser-manager`)
+5. **Observation Layer** (Audit, Logs)
 
-## データフロー（簡潔）
-User → ElectronUI → Orchestrator → Swarm → [TOON → SIE] → BrowserManager → Browser
-結果は AuditLogger に集約され、DEM が失敗データを保持して改善ループに供する。
+## Dependency Rules
+- Lower layers MUST NOT influence upper intent.
+- Execution NEVER modifies architecture definitions.
+- Observers NEVER act.
 
-## 接続・権限方針
-- LLM 接続は API 経由を標準とし、認証・レート制御を設ける。  
-- 実行権限は SIE を介して最小化（ファイル書込等は許可リスト制）。
+## Runtime Components
+
+### Electron App (`apps/electron-app`)
+- **Purpose**: Controlled runtime environment, resource boundary enforcement.
+- **Entry Point**: `apps/electron-app/src/main.ts`
+
+### Playwright (Browser Agent)
+- **Purpose**: Perception and interaction only. Never for decision-making.
+- **Config**: Managed via `BrowserManager`.
+
+## Design Rationale & Decisions
+- **Monorepo (npm workspaces)**: Adopted to preserve cross-capsule traceability and enable reverse spec generation.
+- **TOON Protocol**: Standardized LLM-to-LLM and LLM-to-System communication.
+- **SIE (Structured Instruction Executor)**: Guarantee safe execution of generated instructions (e.g., limit navigation to safe targets).
+
+## Constraints
+- **Runtime**: Node.js >=18.0.0
+- **API**: OpenRouter API Key required.

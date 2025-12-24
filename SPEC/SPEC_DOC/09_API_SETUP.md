@@ -36,12 +36,10 @@ SWARM_MODEL_REVIEWER=openai/gpt-4
    `integration-test/antigravity-harness.ts` または実行スクリプトで、`useMock: false` が設定されていることを確認します（APIキーが存在すれば自動的にfalseになる場合もありますが、明示的な設定を推奨します）。
 
 2. **テスト実行**:
+   (統合テストスクリプトは `scripts/integration-test` に配置されています。)
+
    ```bash
-   # TS実行環境が整っている場合
-   npx ts-node integration-test/antigravity-harness.ts
-   
-   # またはビルド後のJS実行
-   node integration-test/antigravity-harness.js
+   node scripts/integration-test/simple-integration.js
    ```
 
 3. **ログ確認**:

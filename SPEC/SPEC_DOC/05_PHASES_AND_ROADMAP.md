@@ -1,23 +1,47 @@
-# 05 PHASES & ROADMAP — Roadmap (short)
+# PHASES AND ROADMAP
 
-## Phase 1 — Foundation (完了)
-- BrowserManager 基礎（Chromium 統合の抽象層）
-- 初期 SIE MVP、AuditLogger の試作
+Current Phase:
+- Phase 3: Stabilization (Completed)
 
-## Phase 2 — Tooling + TOON (完了域)
-- TOON スキーマ策定
-- Cognize / Scanner / DEM の試作統合
+## Phase History
+- **Phase 1: Foundation** (Type System) - ✅ DONE
+- **Phase 2: Core Features** (Critique System) - ✅ DONE
+- **Phase 3: Stabilization** (Refactoring & Consistency) - ✅ DONE
 
-## Phase 2.5 — Hardening (現在の最優先)
-- 実Playwright 統合（runAction の実実装）
-- 動的バリデータ（高精度LLM を用いた実行前検証）
-- DOM セレクタ生成エンジン
-- test automation（E2E テスト生成・実行）
-- SPEC の維持モデル確立（この作業）
+## Roadmap & Priorities
 
-## Phase 3 — Electron 統合
-- Electron App の Command Center
-- Operator UI と自動化パイプライン統合
+### Phase 4: Intelligence Integration (Planned/TBD)
+- **Tool Unification**: Integration of legacy tool concepts (Cognize, Scanner, DEM) into GLIA Swarm.
+  - **Cognize (Context Awareness)**: Porting file dependency analysis to supply Agents with "Tree-Gazer" context.
+  - **DEM (Dynamic Error Montior)**: Establishing a feedback loop from Electron/Browser runtime errors back to the Swarm.
+  - **Scanner (Forest-Gazer)**: Macro-level project overview generation.
 
-## Phase 4 — Autonomous Development
-- 完全な自律ループ（検出→修正→統合→デプロイの自動化）
+### Next Priorities
+- Design of "Context Provider" module (New Cognize).
+- Design of "Runtime Feedback" hook (New DEM).
+
+### Unimplemented Features / Technical Debt (TODOs)
+- remove once this package no longer supports TS 5.5, and replace NodeJS.BuiltinIteratorReturn with BuiltinIteratorReturn.
+- avoid DOM dependency until WASM moved to own lib.
+- Narrow to DOM types
+- PerformanceNodeEntry is missing
+- Just Plain Wrong™ (see also nodejs/node#57392)
+- remove globals in future version
+
+## Rules
+Allowed:
+- Capsule-based scaling
+- Internal refactors
+- Test evolution
+
+Disallowed:
+- System-wide redesign without human approval
+- Cost-unbounded optimization
+
+Never Do:
+- Fully autonomous upstream requirement definition
+- Infinite research phases
+
+Technical debt is acceptable when:
+- Explicitly recorded
+- Scoped to a capsule

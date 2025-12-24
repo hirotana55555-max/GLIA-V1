@@ -22,6 +22,11 @@
 - Research without cost ceiling.
 - Assumption that LLM output is correct.
 - Skipping human intent clarification at upstream phases.
+- **Web Interface LLM Usage**: All intelligence must be accessed via API (e.g., OpenRouter) to comply with ToS. Automation of web-based LLM chats is strictly prohibited.
+- **Unrestricted Web Scraping**: Playwright usage is restricted to:
+  1. Localhost / Internal Application Testing (Primary Purpose).
+  2. Explicitly allow-listed services with permissive ToS.
+  3. General web scraping is forbidden.
 
 ## Cost Governance
 

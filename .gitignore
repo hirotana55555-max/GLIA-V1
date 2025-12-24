@@ -1,8 +1,22 @@
+
+# !SPEC/Reverse_spec/README.md
+# SPEC/ForLLM - 生成ファイル（既存の設定を整理）
+# SPEC/Reverse_spec - 生成ファイル（スクリプトで生成されるため管理しない）
+# ただしREADME.mdは管理する
 *.temp
-TEMP/
-SPECIFICATION/Backup/*
-SPEC/backups/
+*/dist/
+.vscode/
+SPEC/ForLLM/*_BACKUP*
+SPEC/ForLLM/SPEC_*.md
+SPEC/ForLLM/SPEC_*.txt
 SPEC/ForLLM/SPEC_BACKUP_INFO.md
 SPEC/ForLLM/SPEC_PACKAGE.txt
 SPEC/ForLLM/SPEC_SYNC.md
+SPEC/Reverse_spec/glia_v1.4_specification.json
+SPEC/Reverse_spec/project_specification.json
+SPEC/Reverse_spec/v1.4_data/
+SPEC/backups/
+SPECIFICATION/Backup/*
 SPECIFICATION/TEMP_workspace/
+TEMP/
+node_modules/

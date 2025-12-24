@@ -1,24 +1,71 @@
-# 06 MODULE SPECIFICATIONS — Module summaries (templates)
+# MODULE SPECIFICATIONS
 
-## Cognize (static analyzer)
-- Input: repository files (.ts/.js/.json)
-- Output: dependency graph (.json), function index (.json), chunk proposals (.json)
-- API: analyze(repo_root) → {graphs, fingerprints, chunks}
+Modules are sovereign within capsules.
 
-## Scanner / sync-project.sh (project snapshot)
-- Input: repo root
-- Output: SPEC_SYNC.md, GLIA_PROJECT_TREE.md, GIT_STATUS.md, PACKAGE_LIST.md
-- Operation: run periodically or on-demand before handing to LLM
+## Rules
+- External interfaces are contracts.
+- Internal structure is mutable.
+- Breaking a contract requires human approval.
 
-## DEM (dynamic error monitor)
-- Input: runtime logs, audit events
-- Output: JSONL errors, aggregated reports
-- API: record(event), query(time_range)
+## Trust Model
+- LLM-generated code is untrusted by default.
+- Validation gates are mandatory.
+- Tests are first-class artifacts.
 
-## BrowserManager
-- API: createContext, newPage, runAction, dispose
-- runAction must call Playwright APIs; no setTimeout mocks.
+## Module Declarations
+Modules must declare:
+- Inputs
+- Outputs
+- Side effects
 
-## SIE
-- Responsibilities: parse → validate → dispatch → collect result
-- Validator types: schema (TOON) + dynamic (LLM-based auditor)
+## Core Data Types (TOON)
+The following types define the standardized communication protocol between agents (`packages/toon`).
+
+### Mission
+```typescript
+type Mission {
+    id: UUID;
+    title: string;
+    description: string; // Detailed description of the task
+    evaluation_prompt: string; // Dynamic Evaluation Criteria
+    created_at: Timestamp;
+    created_by: string; // default("human")
+}
+```
+
+### Proposal
+```typescript
+type Proposal {
+    id: UUID;
+    mission_id: UUID; // Link to Mission
+    author_id: AgentId;
+    content: string; // The proposed solution (code, text, plan, etc.)
+    reasoning: string?; // Explanation of why this solution was chosen
+    instructions: Instruction[]?; // Structured Instructions for SIE
+    metadata: Record<string, any>?;
+    created_at: Timestamp;
+}
+```
+
+### Critique
+```typescript
+type Critique {
+    proposal_id: UUID;
+    mission_id: UUID;
+    reviewer_id: AgentId;
+    feedback: string; // Detailed feedback based on evaluation_prompt
+    score: number; // 0-100
+    status: "ACCEPTED" | "REJECTED" | "NEEDS_REVISION";
+    created_at: Timestamp;
+}
+```
+
+### Instruction (SIE)
+```typescript
+type Instruction {
+    action: "navigate" | "click" | "input" | "extract" | "noop";
+    target: string?; // Selector or URL
+    value: string?; // Input text
+    options: Record<string, any>?;
+}
+```
