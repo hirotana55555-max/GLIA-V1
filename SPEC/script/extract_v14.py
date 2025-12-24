@@ -8,6 +8,7 @@ import json
 import re
 from pathlib import Path
 from typing import Dict, List, Any
+from datetime import datetime, timezone, timedelta
 
 # 設定
 DATA_DIR = Path("./SPEC/Reverse_spec/v1.4_data")
@@ -148,8 +149,8 @@ def build_v14_specification() -> Dict[str, Any]:
     spec = {
         "schema_version": "1.4.0",
         "generation_metadata": {
-            "timestamp": "2024-12-17T00:00:00+09:00",
-            "generator": "GLIA-v14-Extractor/Python",
+            "timestamp": f"{datetime.now(timezone(timedelta(hours=9))).isoformat()}",
+            "generator": f"GLIA-v14-Extractor/Python-Clean (Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')})",
             "completion_status": {
                 "all_steps_completed": True,
                 "failed_steps": [],
